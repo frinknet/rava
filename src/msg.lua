@@ -8,11 +8,11 @@ local function message(c, m, ...)
 end
 
 msg.done = function(msg)
-	io.stderr:write("\t"..ansiesc(32)..(msg or "Done.")..ansiesc(0))
+	io.stderr:write(" "..ansiesc(32)..(msg or "Done.")..ansiesc(0))
 end
 
 msg.fail = function(msg)
-	io.stderr:write("\t"..ansiesc(31)..(msg or "Failed!")..ansiesc(0))
+	io.stderr:write(" "..ansiesc(31)..(msg or "Failed!")..ansiesc(0))
 end
 
 msg.line = function(msg)
@@ -40,5 +40,14 @@ msg.info = function(...)
 	message(32, "info", ...)
 end
 
+function msg.dump(...)
+	local arg = {...}
+
+	for i=1, #arg do
+		print(arg[i])
+	end
+
+	os.exit(1)
+end
 
 return msg
