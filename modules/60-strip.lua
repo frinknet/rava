@@ -1,6 +1,6 @@
 -- Strip
 opt.add("s", "Use -Os and strip output file using 'strip --strip-all'", function()
-	rava.addPostProcessor(function(binary)
+	rava.addPostHook(function(binary)
 		optimisationlevel = "s"
 
 		msg.info("Stripping Binary... ")

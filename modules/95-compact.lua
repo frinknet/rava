@@ -1,6 +1,6 @@
 -- Compact using UPX
 opt.add("c", "Compact output using 'upx -9'", function()
-	rava.addPostProcessor(function(binary)
+	rava.addPostHook(function(binary)
 		msg.info("Compacting Binary... ")
 
 		local status = os.execute("upx -9 "..binary.." > /dev/null")
