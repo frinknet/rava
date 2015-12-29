@@ -63,26 +63,34 @@ end
 
 -- Run lua from commandline
 opt.add("eval", "Evaluates a string lua code", function(...)
-	rava.evalCode(...)
+	rava.eval(...)
 	os.exit(0)
 end)
 
 -- Run files instead of compiling
 opt.add("exec", "Executes files in rava runtime environment", function(...)
-	rava.execFiles(...)
+	rava.exec(...)
 
 	os.exit(0)
 end)
 
 -- Compile binary
 opt.add("compile=binary", "Compile a binary from lua files", function(...)
+	print(APPNAME.." v"..VERSION.." - "..jit.version)
+	print("\tYou are running: "..arg[0].." --generate")
+	print("\tThis is identical to: luajit -b\n")
+
 	rava.compile(...)
 	os.exit(0)
 end)
 
 -- Generate bytecode object
-opt.add("generate=module", "Generate a lua file to bytecode object", function(name, ...)
-	rava.generate(name, ...)
+opt.add("generate=module", "Generate a lua file to bytecode object", function(...)
+	print(APPNAME.." v"..VERSION.." - "..jit.version.."\n")
+	print("\tYou are running: "..arg[0].." --generate")
+	print("\tThis is identical to: luajit -b\n")
+
+	rava.generate(...)
 	os.exit(0)
 end)
 

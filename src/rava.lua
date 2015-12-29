@@ -1,6 +1,6 @@
 local bcsave = require("libs/bcsave").start
-local preProcessors = {}
-local postProcessors = {}
+local preHooks = {}
+local postHooks = {}
 local mainCode = [[
 #include <stdio.h>
 #include "lua.h"
@@ -26,33 +26,11 @@ int main(int argc, char *argv[]) {
 	return 0;
 }
 ]]
-local mainObject = {}
-local moreObjects = {}
+local objs = {}
 local rava = {}
 
-rava.code = {}
-
--- Run an external process and return output
-rava.execute = function(cmd)
-	local f = io.popen(cmd)
-	local r = f:read("*all"):match("^%s*(.-)%s*$")
-
-	f:close()
-
-	return r
-end
-
-rava.scandir = function(dir)
-	local r = {}
-	for file in io.popen("ls -a '"..dir.."'"):lines() do
-		table.insert(r, file)
-	end
-
-	return r
-end
-
 -- check if file exists
-rava.fileExists = function(file)
+local function fileExists(file)
 	if file then
 		local f = io.open(file,"r")
 		if f ~= nil then
@@ -65,73 +43,204 @@ rava.fileExists = function(file)
 	end
 end
 
--- Add PreProcessor
-rava.addPreProcessor = function(fn)
-	for i = 1, #preProcessors do
-		if preProcessors[i] == fn then
-			return true
-		end
-	end
-
-	table.insert(preProcessors, fn)
-end
-
--- Run PreProcessors
-rava.runPreProcessors = function(file)
-	if file ~= nil or file ~= "*all" then
-		for _, proc in pairs(preProcessors) do
-			rava.code[file] = proc(rava.code[file], file)
-		end
-	elseif #preProcessors ~= 0 then
-		for i = 1, #arg do
-			rava.runPreProcessors(arg[i])
-		end
+-- run Hooks
+local function callHooks(hooks, ...)
+	for i=1, #hooks do
+		hooks[i](...)
 	end
 end
 
--- Add PostProcessor
-rava.addPostProcessor = function(fn)
-	for i = 1, #postProcessors do
-		if postProcessors[i] == fn then
-			return true
+local function addHook(hooks, fn)
+	for i = 1, #hooks do
+		if hooks[i] == fn then
+			return false
 		end
 	end
 
-	table.insert(postProcessors, fn)
+	table.insert(hooks, fn)
+
+	return true
 end
 
--- Run PostProcessors
-rava.runPostProcessors = function(binary)
-	if #postProcessors ~= 0 then
-		for _, proc in pairs(postProcessors) do
-			proc(binary)
-		end
-	end
-end
+-- call through pipe to generate
+local function generateCodeObject(path, name)
+	local dir, file, ext= string.match(path, "(.-)([^/]-([^%.]+))$")
+	local objpath = path
+	local leavesym = ""
 
--- Build rava.code table from files
-rava.loadCodeFiles = function(...)
-	for i=1, #arg do
-		if arg[i]:match("%.lua$") then
-			local f, err = io.open(arg[i],"r")
-	
-			if err then
+	name = name or (dir:gsub("^%./",""):gsub("^/",""):gsub("/",".") .. file:gsub("%.lua$",""))
+
+	-- Run preprocessors on file
+	callHooks(preHooks, path)
+
+	-- generate lua object
+	if path:match("%.lua$") then
+		if (not opt.flag("n")) then
+			-- load code to check it for errors
+			local fn, err = loadstring(rava.code[path])
+
+			-- die on syntax errors
+			if not fn then
 				msg.fatal(err)
 			end
-	
-			rava.code[arg[i]] = f:read("*all")
-	
+		end
+
+		-- check for leave symbols flag
+		if opt.flag("g") then
+			leavesym = "-g"
+		end
+
+		objpath = path..".o"
+
+		msg.info("Generating "..objpath)
+
+		-- create CC line
+		local f = io.popen(string.format(
+			"%s -q %s --generate=%s %s %s",
+			RAVABIN,
+			leavesym,
+			name,
+			"-",
+			objpath),"w")
+
+		-- write code to generator
+		f:write(rava.code[path])
+		f:close()
+
+		msg.done()
+	end
+
+	-- add object
+	table.insert(objs, objpath)
+
+	--reclame memory (probably overkill in most cases)
+	rava.code[path] = true
+
+	return objpath
+end
+
+-- list files in a directory
+rava.scandir = function(dir)
+	local r = {}
+	for file in io.popen("ls -a '"..dir.."'"):lines() do
+		table.insert(r, file)
+	end
+
+	return r
+end
+
+-- Add PreHooks to filter input
+rava.addPreHook = function(fn)
+	return addHook(preHooks, fn)
+end
+
+-- Add PostHooks to futher process output
+rava.addPostHook = function(fn)
+	return addHook(postHooks, fn)
+end
+
+-- Add files to the rava compiler
+rava.addFile = function(...)
+	for i=1, #arg do
+		local file = arg[i]
+
+		if rava.code[file] then
+			break
+		elseif not fileExists(file) then
+			msg.warning("File not found: "..file)
+		elseif file:match("%.lua$") then
+			msg.info("Load "..file)
+
+			local f, err = io.open(file,"r")
+			local v = #rava.code
+
+			if err then msg.fatal(err) end
+
+			rava.code[file] = f:read("*all")
+
 			f:close()
+
+			msg.done()
+
+			-- check if we need to setup main
+			if v > 0 then
+				generateCodeObject(file)
+			else
+				generateCodeObject(file, "main")
+			end
+		else
+			generateCodeObject(file)
 		end
 	end
 end
 
--- Build rava.code table from string
-rava.loadCodeString = function(name, code)
+-- Add a string to the rava compiler
+rava.addString = function(name, code)
 	rava.code[name] = code
+
+	generateCodeObject(name, name)
 end
 
--- actual generate call
+-- Evaluate code to run in realtime
+rava.eval = function(...)
+	local chunk = ""
+
+	for x = 1, #arg do
+		chunk = chunk.."\n"..arg[x]
+	end
+
+	local fn=loadstring(chunk)
+
+	fn()
+end
+
+-- Execute external files
+rava.exec = function(...)
+	for x = 1, #arg do
+		dofile(arg[x])
+	end
+end
+
+-- Compile the rava object state to binary
+rava.compile = function(binary, ...)
+	-- make sure we have a name
+	if binary == true then
+		binary = "rava"
+	end
+
+	--load Lua Code
+	rava.addFile(...)
+
+	msg.info("Compiling Binary... ")
+
+	local cinit = string.format([[
+	%s -O%s -Wall -Wl,-E \
+		-x c %s -x none %s \
+		%s \
+		-o %s -lm -ldl -flto ]],
+		os.getenv("CC") or "gcc",
+		OPLEVEL,
+		"-",
+		table.remove(objs, 1),
+		os.getenv("CCARGS").." "..table.concat(objs, " "),
+		binary)
+	local b = io.popen(cinit, "w")
+
+	if b:write(mainCode) then
+		msg.done()
+	else
+		msg.fail()
+	end
+
+	b:close()
+
+	-- run PostHooks
+	callHooks(postHooks, binary)
+
+	print("\n")
+end
+
+-- Generate an object file from lua files
 rava.generate = function(name, ...)
 	local calls = {}
 
@@ -144,126 +253,10 @@ rava.generate = function(name, ...)
 		table.insert(calls, arg[i])
 	end
 
-	print(APPNAME.." v"..VERSION.." - "..jit.version.."\n")
-	print("\tYou are running: "..arg[0].." --generate")
-	print("\tThis is identical to: luajit -b\n")
-
 	bcsave(unpack(calls))
 end
 
--- call through pipe to generate
-rava.generatePipe = function(infile, outfile, name)
-	local dir, file, ext= string.match(infile, "(.-)([^/]-([^%.]+))$")
-	local f
-
-	name = name or (dir:gsub("^%./",""):gsub("^/",""):gsub("/",".") .. file:gsub("%.lua$",""))
-	outfile = outfile..".o"
-
-	if (not opt.flag("n")) and infile then
-		local fn, err = loadstring(rava.code[infile])
-
-		if fn then
-			f = io.popen(string.format("%s -q --generate=%s %s %s", RAVABIN, name, "-", outfile),"w")
-		else
-			msg.fatal(err)
-		end
-	else
-		f = io.popen(string.format("%s -q --generate=%s %s %s", RAVABIN, name, "-", outfile),"w")
-	end
-
-	f:write(rava.code[infile])
-	f:close()
-
-	return outfile
-end
-
--- loop through lua files
-rava.generateLuaObjects = function(...)
-	msg.info("Generating Objects... ")
-
-	mainObject = rava.generatePipe(arg[1], arg[1], "main")
-
-	if #arg >= 2 then
-		for i = 2, #arg do
-			if arg[i]:match("%.lua$") then
-				table.insert(moreObjects, generateLuaObject(arg[i], arg[i]))
-			else
-				table.insert(moreObjects, arg[i])
-			end
-		end
-	end
-
-	msg.done()
-end
-
--- create binary from objects
-rava.compileToBinary = function(initCode, outputBinary, mainObject, moreObjects)
-	msg.info("Compiling Binary... ")
-
-	local cinit = string.format([[
-	%s -O%s -Wall -Wl,-E \
-		-x c %s -x none %s \
-		%s \
-		-o %s -lm -ldl -flto ]],
-		(os.getenv("CC") or "gcc"),
-		OPLEVEL,
-		"-",
-		mainObject,
-		os.getenv("CCARGS").." "..table.concat(moreObjects, " "),
-		outputBinary)
-	local b = io.popen(cinit, "w")
-
-	if b:write(initCode) then
-		msg.done()
-	else
-		msg.fail()
-	end
-
-	b:close()
-end
-
-rava.evalCode = function(...)
-	local chunk = ""
-
-	for x = 1, #arg do
-		chunk = chunk.."\n"..arg[x]
-	end
-
-	local fn=loadstring(chunk)
-
-	fn()
-end
-
-rava.execFiles = function(...)
-	for x = 1, #arg do
-		dofile(arg[x])
-	end
-end
-
-rava.compile = function(name, ...)
-	print(APPNAME.." v"..VERSION.." - "..jit.version)
-
-	-- make sure we have a name
-	if name == true then
-		name = "rava"
-	end
-
-	--load Lua Code
-	rava.loadCodeFiles(...)
-
-	-- run PreProcessors
-	rava.runPreProcessors()
-
-	--compile Lua to Bytecode
-	rava.generateLuaObjects(...)
-
-	--compile C and object code
-	rava.compileToBinary(mainCode, name, mainObject, moreObjects)
-
-	-- run PostProcessors
-	rava.runPostProcessors(name)
-
-	print("\n")
-end
+-- code repository
+rava.code = {}
 
 return rava

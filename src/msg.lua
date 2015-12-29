@@ -24,7 +24,7 @@ msg.printf = function(msg, ...)
 end
 
 msg.fatal = function(...)
-	message(31, "fatal", ...)
+	message(31, "fatal", ..., "\n\n")
 	os.exit(1)
 end
 
