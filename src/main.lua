@@ -93,9 +93,12 @@ end)
 
 -- Generate bytecode object
 opt.add("generate=module", "Generate a lua file to bytecode object", function(...)
-	print(APPNAME.." v"..VERSION.." - "..jit.version.."\n")
-	print("\tYou are running: "..RAVABIN.." --generate")
-	print("\tThis is identical to: luajit -b\n")
+	local arg = {...}
+
+	if #arg < 2 then
+		print(APPNAME.." v"..VERSION.." - "..jit.version.."\n")
+		print("\tUsage: "..RAVABIN.." --generate [opt]\n")
+	end
 
 	rava.generate(...)
 	os.exit(0)
