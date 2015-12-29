@@ -12,6 +12,9 @@ DPREFIX= $(DESTDIR)$(PREFIX)
 INSTALL_BIN=   $(DPREFIX)/bin
 INSTALL_DEP=   rava
 
+CC=gcc
+LD=ld
+
 default all : libs/luajit src/rava.lua modules/*.lua
 	$(MAKE) git
 	@echo "==== Building Rava $(VERSION) ===="
@@ -20,7 +23,7 @@ default all : libs/luajit src/rava.lua modules/*.lua
 
 libs/rava.a src/rava.o: $(INSTALL_DEP) src/main.c
 	@echo "==== Generating Rava Lib $(VERSION) to $(PREFIX) ===="
-	$(CC) -c src/rava.c -Ilibs/ -o src/rava.o
+	$(CC) -c src/main.c -Ilibs/ -o src/rava.o
 	$(LD) -r src/rava.o libs/libluajit.a -o libs/rava.a
 	@echo "==== Successfully generated Rava Lib $(VERSION) to $(PREFIX) ===="
 
