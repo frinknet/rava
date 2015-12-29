@@ -12,13 +12,17 @@ DPREFIX= $(DESTDIR)$(PREFIX)
 INSTALL_BIN=   $(DPREFIX)/bin
 INSTALL_DEP=   rava
 
-CCARGS=-Ilibs/ libs/libluajit.a
-
-default all $(INSTALL_DEP): libs/luajit src/rava.lua modules/*.lua
+default all : libs/luajit src/rava.lua modules/*.lua
 	$(MAKE) git
 	@echo "==== Building Rava $(VERSION) ===="
 	CCARGS="$(CCARGS)" libs/luajit src/main.lua -csmr --compile=rava src/main.lua
 	@echo "==== Successfully built Rava $(VERSION) ===="
+
+libs/rava.a src/rava.o: $(INSTALL_DEP) src/main.c
+	@echo "==== Generating Rava Lib $(VERSION) to $(PREFIX) ===="
+	$(CC) -c src/rava.c -Ilibs/ -o src/rava.o
+	$(LD) -r src/rava.o libs/libluajit.a -o libs/rava.a
+	@echo "==== Successfully generated Rava Lib $(VERSION) to $(PREFIX) ===="
 
 install: $(INSTALL_DEP)
 	@echo "==== Installing Rava $(VERSION) to $(PREFIX) ===="
