@@ -12,20 +12,29 @@ DPREFIX= $(DESTDIR)$(PREFIX)
 INSTALL_BIN=   $(DPREFIX)/bin
 INSTALL_DEP=   rava
 
+CCARGS=-Ilibs/
+
 CC=gcc
 LD=ld
+RAVA=CCARGS="$(CCARGS)" libs/luajit src/main.lua
 
-default all : libs/luajit src/rava.lua modules/*.lua
+default all $(INSTALL_DEP): libs/luajit libs/ravastore.o src/rava.lua modules/*.lua
 	$(MAKE) git
 	@echo "==== Building Rava $(VERSION) ===="
-	CCARGS="$(CCARGS)" libs/luajit src/main.lua -csmr --compile=rava src/main.lua
+	$(RAVA) -csmr --compile=rava src/main.lua
 	@echo "==== Successfully built Rava $(VERSION) ===="
 
-libs/rava.a src/rava.o: $(INSTALL_DEP) src/main.c
-	@echo "==== Generating Rava Lib $(VERSION) to $(PREFIX) ===="
-	$(CC) -c src/main.c -Ilibs/ -o src/rava.o
-	$(LD) -r src/rava.o libs/libluajit.a -o libs/rava.a
-	@echo "==== Successfully generated Rava Lib $(VERSION) to $(PREFIX) ===="
+libs/ravastore.o libs/ravastore.lua: libs/luajit libs/rava.a
+	@echo "==== Generating Rava Store $(VERSION) to $(PREFIX) ===="
+	$(RAVA) --store=ravastore libs/ravastore.o libs/rava.a
+	@echo "==== Successfully generated Rava Store $(VERSION) to $(PREFIX) ===="
+
+libs/rava.a src/rava.o: src/rava.c
+	@echo "==== Generating Rava Kernel $(VERSION) to $(PREFIX) ===="
+	$(RAVA) --generate=init src/init.lua src/init.lua.o
+	$(CC) -c src/rava.c -Ilibs/ -o src/rava.o
+	$(LD) -r src/rava.o src/init.lua.o libs/libluajit.a -o libs/rava.a
+	@echo "==== Successfully generated Rava Kernel $(VERSION) to $(PREFIX) ===="
 
 install: $(INSTALL_DEP)
 	@echo "==== Installing Rava $(VERSION) to $(PREFIX) ===="
@@ -34,7 +43,7 @@ install: $(INSTALL_DEP)
 
 uninstall:
 	@echo "==== Uninstalling Rava $(VERSION) from $(PREFIX) ===="
-	rm $(INSTALL_BIN)/rava
+	rm -f $(INSTALL_BIN)/rava
 	@echo "==== Successfully uninstalled LuaJIT $(VERSION) from $(PREFIX) ===="
 
 git:
@@ -46,7 +55,7 @@ git:
 
 clean:
 	$(MAKE) clean -C deps/luajit/
-	rm -r libs/* src/*.o modules/*.o rava 2>/dev/null
+	rm -rf libs/* src/*.o modules/*.o rava
 
 $(LUA_LIBS): $(LUA_DEPS)
 	cp $+ libs/
