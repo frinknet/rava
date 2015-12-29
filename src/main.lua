@@ -7,22 +7,21 @@ rava = require("src.rava")
 APPNAME = "Rava Micro-Service Compiler"
 VERSION = "2.0.1"
 OPLEVEL = 1
-BINNAME = "rava"
 RAVABIN = arg[-1].." "..arg[0]
 
 -- Help
 opt.add("h", "Show this help dialog", function(r)
 	print(APPNAME.." v"..VERSION.." - "..jit.version.."\n")
 	print("\tUsage:\n")
-	print("\t"..arg[0].." [opt] files objects\n")
+	print("\t"..RAVABIN.." [opt] files objects\n")
 	print("\tOptions:\n")
 	opt.show()
 	print("")
 	print("\tExamples:\n")
-	print("\t"..arg[0].." --exec test.lua")
-	print("\t"..arg[0].." --eval \"print('hello world.')\"")
-	print("\t"..arg[0].." --compile=appsvr app.lua server.a")
-	print("\t"..arg[0].." --generate=main main.lua main.lua.o\n")
+	print("\t"..RAVABIN.." --exec test.lua")
+	print("\t"..RAVABIN.." --eval \"print('hello world.')\"")
+	print("\t"..RAVABIN.." --compile=appsvr app.lua server.a")
+	print("\t"..RAVABIN.." --generate=main main.lua main.lua.o\n")
 	os.exit(r == false)
 end)
 
@@ -77,7 +76,7 @@ end)
 -- Compile binary
 opt.add("compile=binary", "Compile a binary from lua files", function(...)
 	print(APPNAME.." v"..VERSION.." - "..jit.version)
-	print("\tYou are running: "..arg[0].." --generate")
+	print("\tYou are running: "..RAVABIN.." --generate")
 	print("\tThis is identical to: luajit -b\n")
 
 	rava.compile(...)
@@ -87,7 +86,7 @@ end)
 -- Generate bytecode object
 opt.add("generate=module", "Generate a lua file to bytecode object", function(...)
 	print(APPNAME.." v"..VERSION.." - "..jit.version.."\n")
-	print("\tYou are running: "..arg[0].." --generate")
+	print("\tYou are running: "..RAVABIN.." --generate")
 	print("\tThis is identical to: luajit -b\n")
 
 	rava.generate(...)
@@ -95,11 +94,11 @@ opt.add("generate=module", "Generate a lua file to bytecode object", function(..
 end)
 
 -- Run options
-opt.run("*all")
+opt.run("*all", unpack(arg))
 
 -- Make sure we have enough to do something
 if #arg > 0 then
-	opt.run("exec", arg)
+	opt.run("exec", unpack(arg))
 else
 	opt.run("h", 0)
 end
