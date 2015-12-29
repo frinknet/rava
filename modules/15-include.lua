@@ -5,18 +5,23 @@ opt.add("r", "Recursively include files", function()
 		local code = rava.code[file]
 		local findreq = function(chunk, m)
 			chunk:gsub(m, function(line, file)
-				msg.info("Recursive: "..line)
-				rava.addFile(file..".lua")
+				file = file:gsub("[.]", "/")..".lua"
+
+				rava.addFile(file)
 		
 				return line
 			end)
 		end
 
+		if code == nil then
+			return
+		end
+
 		-- Process all required patters
-		findreq(code, '(require%s+%("(.-)"%))')
-		findreq(code, '(require%s+"(.-)")')
-		findreq(code, "(require%s+%('(.-)'%))")
-		findreq(code, "(require%s+'(.-)')")
+		findreq(code, '(require%s-%(%s-"(.-)"%s-%))')
+		findreq(code, '(require%s-"(.-)")')
+		findreq(code, "(require%s-%(%s-'(.-)'%s-%))")
+		findreq(code, "(require%s-'(.-)')")
 	end)
 end)
 
