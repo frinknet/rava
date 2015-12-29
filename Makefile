@@ -55,7 +55,7 @@ git:
 
 clean:
 	$(MAKE) clean -C deps/luajit/
-	rm -rf libs/* src/*.o modules/*.o rava
+	rm -rf libs/* src/*.o modules/*.o rava rava.a
 
 $(LUA_LIBS): $(LUA_DEPS)
 	cp $+ libs/
