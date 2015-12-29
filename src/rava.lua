@@ -244,7 +244,7 @@ function rava.compile(binary, ...)
 	msg.info("Compiling Binary... ")
 
 	local f, err = io.open(binary..".a", "w+")
-	local files = require("libs/ravastore")
+	local files = require("libs"..".ravastore")
 
 	f:write(files["libs/rava.a"])
 	f:close()

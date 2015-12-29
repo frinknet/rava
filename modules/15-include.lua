@@ -17,10 +17,10 @@ opt.add("r", "Recursively include files", function()
 			return
 		elseif file:match("%.lua$") then
 			-- Process all required patters
-			findreq(code, '(require%s-%(%s-"(.-)"%s-%))')
-			findreq(code, '(require%s-"(.-)")')
-			findreq(code, "(require%s-%(%s-'(.-)'%s-%))")
-			findreq(code, "(require%s-'(.-)')")
+			findreq(code, '(require%s-%(%s-"([^"]-)"%s-%))')
+			findreq(code, '(require%s-"([^"]-)")')
+			findreq(code, "(require%s-%(%s-'([^']-)'%s-%))")
+			findreq(code, "(require%s-'([^']-)')")
 		end
 	end)
 end)
