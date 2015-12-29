@@ -73,6 +73,14 @@ opt.add("exec", "Executes files in rava runtime environment", function(...)
 	os.exit(0)
 end)
 
+-- Generate binary data store
+opt.add("store=variable", "Generate a lua data store of binary files", function(...)
+	print(APPNAME.." v"..VERSION.." - "..jit.version.."\n")
+
+	rava.store(...)
+	os.exit(0)
+end)
+
 -- Compile binary
 opt.add("compile=binary", "Compile a binary from lua files", function(...)
 	print(APPNAME.." v"..VERSION.." - "..jit.version)
@@ -93,13 +101,6 @@ opt.add("generate=module", "Generate a lua file to bytecode object", function(..
 	os.exit(0)
 end)
 
--- Generate binary data store
-opt.add("store=variable", "Generate a lua data store of files", function(...)
-	print(APPNAME.." v"..VERSION.." - "..jit.version.."\n")
-
-	rava.store(...)
-	os.exit(0)
-end)
 -- Run options
 opt.run("*all", unpack(arg))
 
