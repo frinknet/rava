@@ -199,35 +199,25 @@ function rava.compile(binary, ...)
 
 	msg.info("Compiling Binary... ")
 
-	local f, err = io.open("src/main.c", "r")
+	local f, err = io.open(binary..".a", "w+")
+	local files = require("ravastore")
 
-	if err then msg.fatal(err) end
-
-	maincode = f:read("*all")
-
+	f:write(files["rava.a"])
 	f:close()
 
 	local cinit = string.format([[
 	%s -O%s -Wall -Wl,-E \
-		-x c %s -x none %s \
+		-x none %s -x none %s \
 		%s \
 		-o %s -lm -ldl -flto ]],
 		os.getenv("CC") or "gcc",
 		OPLEVEL,
-		"-",
+		"rava.a",
 		mainobj,
 		os.getenv("CCARGS").." "..table.concat(objs, " "),
 		binary)
 	msg.warning(cinit)
-	local b = io.popen(cinit, "w")
-
-	if b:write(maincode) then
-		msg.done()
-	else
-		msg.fail()
-	end
-
-	b:close()
+	os.execute(cinit)
 
 	-- run PostHooks
 	callHooks(postHooks, binary)
