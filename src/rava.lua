@@ -248,9 +248,9 @@ function rava.store(variable, store, ...)
 	local out = io.open(store, "w+")
 	local files = {...}
 
-	out:write("local "..variable.." = {}\n")
-
 	variable = variable or "files"
+
+	out:write("local "..variable.." = {}\n")
 
 	for path in files do
 		local dir, file, ext= string.match(path, "(.-)([^/]-([^%.]+))$")
