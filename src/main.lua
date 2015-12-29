@@ -93,6 +93,13 @@ opt.add("generate=module", "Generate a lua file to bytecode object", function(..
 	os.exit(0)
 end)
 
+-- Generate binary data store
+opt.add("store=variable", "Generate a lua data store of files", function(...)
+	print(APPNAME.." v"..VERSION.." - "..jit.version.."\n")
+
+	rava.store(...)
+	os.exit(0)
+end)
 -- Run options
 opt.run("*all", unpack(arg))
 
