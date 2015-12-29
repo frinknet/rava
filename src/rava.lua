@@ -136,7 +136,10 @@ function rava.addFile(...)
 		if rava.code[file] then
 			break
 		elseif not fileExists(file) then
-			msg.warning("File not found: "..file)
+			msg.warning("Failed to add module: "..file)
+
+			if #file > 10 then
+			end
 
 			break
 		elseif file:match("%.lua$") then
@@ -187,6 +190,47 @@ function rava.exec(...)
 	end
 end
 
+-- Generate binary data store
+function rava.store(variable, store, ...)
+	-- open store
+	local out = io.open(store:gsub("%..+$", "")..".lua", "w+")
+	local files = {...}
+
+	-- make sure variable is set
+	variable = variable or "files"
+
+	-- start variable
+	out:write("local "..variable.." = {}\n")
+
+	-- loop through files
+	for _, path in pairs(files) do
+		local dir, file, ext= string.match(path, "(.-)([^/]-([^%.]+))$")
+		local ins = io.open(path, "r")
+		local data = ins:read("*all")
+
+		if not ins then
+			msg.fatal("Error reading " .. path)
+		end
+
+		ins:close()
+		out:write(variable..'["'..dir:gsub("^%./", ""):gsub("^/", "")..file..'"] = "')
+
+		for i = 1, #data do
+			out:write(string.format("\\%i", string.byte(data, i)))
+		end
+
+		out:write('"\n')
+	end
+
+	out:write('\nmodule(...)\n')
+	out:write('return '..variable)
+	out:close()
+
+	bcsave(
+		store:gsub("%..+$", "")..".lua",
+		store:gsub("%..+$", "")..".o")
+end
+
 -- Compile the rava object state to binary
 function rava.compile(binary, ...)
 	-- make sure we have a name
@@ -200,24 +244,27 @@ function rava.compile(binary, ...)
 	msg.info("Compiling Binary... ")
 
 	local f, err = io.open(binary..".a", "w+")
-	local files = require("ravastore")
+	local files = require("libs/ravastore")
 
-	f:write(files["rava.a"])
+	f:write(files["libs/rava.a"])
 	f:close()
 
-	local cinit = string.format([[
+	-- Construct compiler call
+	local ccall = string.format([[
 	%s -O%s -Wall -Wl,-E \
 		-x none %s -x none %s \
 		%s \
 		-o %s -lm -ldl -flto ]],
 		os.getenv("CC") or "gcc",
 		OPLEVEL,
-		"rava.a",
+		binary..".a",
 		mainobj,
 		os.getenv("CCARGS").." "..table.concat(objs, " "),
 		binary)
-	msg.warning(cinit)
-	os.execute(cinit)
+
+	-- Call compiler
+	msg.warning(ccall)
+	os.execute(ccall)
 
 	-- run PostHooks
 	callHooks(postHooks, binary)
@@ -240,42 +287,6 @@ function rava.generate(name, ...)
 	end
 
 	bcsave(unpack(calls))
-end
-
--- Generate binary data store
-function rava.store(variable, store, ...)
-	-- open store
-	local out = io.open(store, "w+")
-	local files = {...}
-
-	variable = variable or "files"
-
-	out:write("local "..variable.." = {}\n")
-
-	for path in files do
-		local dir, file, ext= string.match(path, "(.-)([^/]-([^%.]+))$")
-		local data = f:read("*all")
-		local ins = io.open(path, "r")
-
-		if not ins then
-			msg.fatal("Error reading " .. path)
-		end
-
-		ins:close()
-		out:write(variable..'["'..dir:gsub("^%./",""):gsub("^/","")..file..'"] = "')
-
-		for i = 1, #data do
-			out:write(string.format("\\%i", string.byte(data, i)))
-		end
-
-		out:write('"\n')
-	end
-
-	out:write('"\nmodule(...)\n')
-	out:write('return '..variable)
-	out:close()
-
-	bcsave(store, store..".o")
 end
 
 -- code repository
