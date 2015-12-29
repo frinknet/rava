@@ -1,4 +1,4 @@
-local msg = require("src/msg")
+local msg = require("src.msg")
 
 local opt_act = {}
 local opt_def = {}
@@ -83,15 +83,15 @@ opt.show = function()
 end
 
 opt.run = function(k, ...)
-	if k ~= nil and k ~= "*all" then
-		if opt_act[k] then
-			return opt_act[k](opt_lst[k], ...)
-		end
-	else
+	if k == nil or k == "*all" then
 		for _, k in pairs(opt_seq) do
 			if opt_lst[k] then
 				opt.run(k, ...)
 			end
+		end
+	else
+		if opt_act[k] then
+			return opt_act[k](opt_lst[k], ...)
 		end
 	end
 end
