@@ -16,25 +16,32 @@ CCARGS=-Ilibs/
 
 CC=gcc
 LD=ld
-RAVA=CCARGS="$(CCARGS)" libs/luajit src/main.lua
+RAVA=libs/luajit rava.lua
 
-default all $(INSTALL_DEP): libs/luajit libs/ravastore.o src/rava.lua modules/*.lua
+default all $(INSTALL_DEP): $(RAVA) libs/ravastore.o
 	$(MAKE) git
 	@echo "==== Building Rava $(VERSION) ===="
 	$(RAVA) -csmr --compile=rava src/main.lua
 	@echo "==== Successfully built Rava $(VERSION) ===="
 
-libs/ravastore.o libs/ravastore.lua: libs/luajit libs/rava.a
+rava.lua rava.lua.o src/init.lua.o: $(LUA_LIBS)
+		@echo "==== Building Rava Init $(VERSION) ===="
+	echo 'require("src.main")' > rava.lua
+	$(RAVA) --generate=init src/init.lua src/init.lua.o
+	$(RAVA) --generate=main rava.lua rava.lua.o
+	@echo "==== Successfully Rava Init $(VERSION) ===="
+
+: $(RAVA) libs/rava.a
 	@echo "==== Generating Rava Store $(VERSION) to $(PREFIX) ===="
-	$(RAVA) --store=ravastore libs/ravastore.o libs/rava.a
 	@echo "==== Successfully generated Rava Store $(VERSION) to $(PREFIX) ===="
 
-libs/rava.a src/rava.o: src/rava.c
-	@echo "==== Generating Rava Kernel $(VERSION) to $(PREFIX) ===="
-	$(RAVA) --generate=init src/init.lua src/init.lua.o
+ravatest libs/rava.a src/rava.o libs/ravastore.o libs/ravastore.lua: src/rava.c src/init.lua.o $(LUA_LIBS) $(RAVA)
+	@echo "==== Generating Quick Rava $(VERSION) to $(PREFIX) ===="
 	$(CC) -c src/rava.c -Ilibs/ -o src/rava.o
 	$(LD) -r src/rava.o src/init.lua.o libs/libluajit.a -o libs/rava.a
-	@echo "==== Successfully generated Rava Kernel $(VERSION) to $(PREFIX) ===="
+	$(RAVA) --store=ravastore libs/ravastore.o libs/rava.a
+	$(RAVA) --compile=ravatest rava.lua
+	@echo "==== Successfully generated Quick Rava $(VERSION) to $(PREFIX) ===="
 
 install: $(INSTALL_DEP)
 	@echo "==== Installing Rava $(VERSION) to $(PREFIX) ===="
@@ -55,7 +62,7 @@ git:
 
 clean:
 	$(MAKE) clean -C deps/luajit/
-	rm -rf libs/* src/*.o modules/*.o rava rava.a
+	rm -rf libs/* src/*.o modules/*.o rava*
 
 $(LUA_LIBS): $(LUA_DEPS)
 	cp $+ libs/
