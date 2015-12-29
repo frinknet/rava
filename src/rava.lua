@@ -26,6 +26,7 @@ int main(int argc, char *argv[]) {
 	return 0;
 }
 ]]
+local mainobj
 local objs = {}
 local rava = {}
 
@@ -70,6 +71,12 @@ local function generateCodeObject(path, name)
 
 	name = name or (dir:gsub("^%./",""):gsub("^/",""):gsub("/",".") .. file:gsub("%.lua$",""))
 
+	-- First file we add is always main
+	if mainobj == nil then
+		name = "main"
+		mainobj = true
+	end
+
 	-- Run preprocessors on file
 	callHooks(preHooks, path)
 
@@ -92,7 +99,7 @@ local function generateCodeObject(path, name)
 
 		objpath = path..".o"
 
-		msg.info("Generating "..objpath)
+		msg.info("Chunk '"..name.."' in "..objpath)
 
 		-- create CC line
 		local f = io.popen(string.format(
@@ -111,7 +118,11 @@ local function generateCodeObject(path, name)
 	end
 
 	-- add object
-	table.insert(objs, objpath)
+	if name == "main" then
+		mainobj = objpath
+	else
+		table.insert(objs, objpath)
+	end
 
 	--reclame memory (probably overkill in most cases)
 	rava.code[path] = true
@@ -120,7 +131,7 @@ local function generateCodeObject(path, name)
 end
 
 -- list files in a directory
-rava.scandir = function(dir)
+function rava.scandir(dir)
 	local r = {}
 	for file in io.popen("ls -a '"..dir.."'"):lines() do
 		table.insert(r, file)
@@ -130,17 +141,19 @@ rava.scandir = function(dir)
 end
 
 -- Add PreHooks to filter input
-rava.addPreHook = function(fn)
+function rava.addPreHook(fn)
 	return addHook(preHooks, fn)
 end
 
 -- Add PostHooks to futher process output
-rava.addPostHook = function(fn)
+function rava.addPostHook(fn)
 	return addHook(postHooks, fn)
 end
 
 -- Add files to the rava compiler
-rava.addFile = function(...)
+function rava.addFile(...)
+	local arg = {...}
+
 	for i=1, #arg do
 		local file = arg[i]
 
@@ -148,8 +161,10 @@ rava.addFile = function(...)
 			break
 		elseif not fileExists(file) then
 			msg.warning("File not found: "..file)
+
+			break
 		elseif file:match("%.lua$") then
-			msg.info("Load "..file)
+			msg.info("Loading "..file)
 
 			local f, err = io.open(file,"r")
 			local v = #rava.code
@@ -161,28 +176,22 @@ rava.addFile = function(...)
 			f:close()
 
 			msg.done()
-
-			-- check if we need to setup main
-			if v > 0 then
-				generateCodeObject(file)
-			else
-				generateCodeObject(file, "main")
-			end
-		else
-			generateCodeObject(file)
 		end
+
+		generateCodeObject(file)
 	end
 end
 
 -- Add a string to the rava compiler
-rava.addString = function(name, code)
+function rava.addString(name, code)
 	rava.code[name] = code
 
 	generateCodeObject(name, name)
 end
 
 -- Evaluate code to run in realtime
-rava.eval = function(...)
+function rava.eval(...)
+	local arg = {...}
 	local chunk = ""
 
 	for x = 1, #arg do
@@ -195,14 +204,16 @@ rava.eval = function(...)
 end
 
 -- Execute external files
-rava.exec = function(...)
+function rava.exec(...)
+	local arg = {...}
+
 	for x = 1, #arg do
 		dofile(arg[x])
 	end
 end
 
 -- Compile the rava object state to binary
-rava.compile = function(binary, ...)
+function rava.compile(binary, ...)
 	-- make sure we have a name
 	if binary == true then
 		binary = "rava"
@@ -221,7 +232,7 @@ rava.compile = function(binary, ...)
 		os.getenv("CC") or "gcc",
 		OPLEVEL,
 		"-",
-		table.remove(objs, 1),
+		mainobj,
 		os.getenv("CCARGS").." "..table.concat(objs, " "),
 		binary)
 	local b = io.popen(cinit, "w")
@@ -241,7 +252,8 @@ rava.compile = function(binary, ...)
 end
 
 -- Generate an object file from lua files
-rava.generate = function(name, ...)
+function rava.generate(name, ...)
+	local arg = {...}
 	local calls = {}
 
 	if name ~= true then
@@ -258,5 +270,7 @@ end
 
 -- code repository
 rava.code = {}
+
+module(...)
 
 return rava
