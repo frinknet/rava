@@ -1,31 +1,7 @@
 local bcsave = require("libs/bcsave").start
 local preHooks = {}
 local postHooks = {}
-local mainCode = [[
-#include <stdio.h>
-#include "lua.h"
-#include "lualib.h"
-#include "lauxlib.h"
-int main(int argc, char *argv[]) {
-	int i;
-	lua_State* L = luaL_newstate();
-	if (!L) { printf("Error: LuaJIT unavailable!!\n"); }
-	luaL_openlibs(L);
-	lua_newtable(L);
-	for (i = 0; i < argc; i++) {
-		lua_pushnumber(L, i);
-		lua_pushstring(L, argv[i]);
-		lua_settable(L, -3);
-	}
-	lua_setglobal(L, "arg");
-	int ret = luaL_dostring(L, "require \"main\"");
-	if (ret != 0) {
-		printf("%s\n", lua_tolstring(L, -1, 0));
-		return ret;
-	}
-	return 0;
-}
-]]
+local maincode
 local mainobj
 local objs = {}
 local rava = {}
@@ -167,7 +143,6 @@ function rava.addFile(...)
 			msg.info("Loading "..file)
 
 			local f, err = io.open(file,"r")
-			local v = #rava.code
 
 			if err then msg.fatal(err) end
 
@@ -224,6 +199,14 @@ function rava.compile(binary, ...)
 
 	msg.info("Compiling Binary... ")
 
+	local f, err = io.open("src/main.c", "r")
+
+	if err then msg.fatal(err) end
+
+	maincode = f:read("*all")
+
+	f:close()
+
 	local cinit = string.format([[
 	%s -O%s -Wall -Wl,-E \
 		-x c %s -x none %s \
@@ -235,9 +218,10 @@ function rava.compile(binary, ...)
 		mainobj,
 		os.getenv("CCARGS").." "..table.concat(objs, " "),
 		binary)
+	msg.warning(cinit)
 	local b = io.popen(cinit, "w")
 
-	if b:write(mainCode) then
+	if b:write(maincode) then
 		msg.done()
 	else
 		msg.fail()
@@ -266,6 +250,42 @@ function rava.generate(name, ...)
 	end
 
 	bcsave(unpack(calls))
+end
+
+-- Generate binary data store
+function rava.store(variable, store, ...)
+	-- open store
+	local out = io.open(store, "w+")
+	local files = {...}
+
+	out:write("local "..variable.." = {}\n")
+
+	variable = variable or "files"
+
+	for path in files do
+		local dir, file, ext= string.match(path, "(.-)([^/]-([^%.]+))$")
+		local data = f:read("*all")
+		local ins = io.open(path, "r")
+
+		if not ins then
+			msg.fatal("Error reading " .. path)
+		end
+
+		ins:close()
+		out:write(variable..'["'..dir:gsub("^%./",""):gsub("^/","")..file..'"] = "')
+
+		for i = 1, #data do
+			out:write(string.format("\\%i", string.byte(data, i)))
+		end
+
+		out:write('"\n')
+	end
+
+	out:write('"\nmodule(...)\n')
+	out:write('return '..variable)
+	out:close()
+
+	bcsave(store, store..".o")
 end
 
 -- code repository
