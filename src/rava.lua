@@ -226,9 +226,7 @@ function rava.store(variable, store, ...)
 	out:write('return '..variable)
 	out:close()
 
-	bytecode(
-		store:gsub("%..+$", "")..".lua",
-		store:gsub("%..+$", "")..".o")
+	bytecode(store:gsub("%..+$", "")..".lua", store:gsub("%..+$", "")..".o")
 end
 
 -- Compile the rava object state to binary
