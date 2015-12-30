@@ -11,9 +11,6 @@ libs/luajit/bcsave.lua
 LIBUV_DEPS=deps/libuv/.libs/libuv.a deps/libuv/include/*
 LIBUV_LIBS=libs/libuv/libuv.a
 
-LJUV_DEPS=libs/ljuv/uv.lua libs/ljuv/uv/*
-LJUV_LIBS=libs/ljuv/uv.a
-
 RAVA_SRC=src/rava.c src/rava.lua src/msg.lua src/opt.lua src/init.lua
 RAVA_LIBS=libs/rava.a
 
@@ -78,7 +75,6 @@ deps: deps-luajit deps-libuv deps-rava
 
 deps-luajit: $(LUA_LIBS)
 deps-libuv: $(LIBUV_LIBS)
-deps-ljuv: $(LJUV_LIBS)
 deps-rava: $(RAVA_LIBS)
 
 $(RAVA_LIBS): $(LUA_LIBS) $(LIBUV_LIBS)
@@ -99,11 +95,6 @@ $(LUA_LIBS): $(LUA_DEPS)
 $(LIBUV_LIBS): $(LIBUV_DEPS)
 	mkdir -p libs/libuv/
 	cp $+ libs/libuv/
-
-$(LJUV_LIBS): $(LJUV_DEPS)
-	mkdir -p libs/ljuv/
-	cp $+ libs/ljuv/
-	cd libs/ljuv/ && $(RAVA) --build=uv uv.lua
 
 $(LUA_DEPS):
 	$(MAKE) -C deps/luajit/
