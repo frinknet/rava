@@ -102,4 +102,6 @@ end
 
 opt.parse(arg)
 
+module(...)
+
 return opt
