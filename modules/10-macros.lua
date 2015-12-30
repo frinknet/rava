@@ -1,5 +1,5 @@
 -- Macros. Run at compile time.
-opt.add("m", "Process <".."%= macros %".."> in source before compiling", function()
+opt.add("m", "Process <[[=macros]]> in source before compiling", function()
 	rava.addPreHook(function(file)
 		local code = rava.code[file]
 		local printed = false
@@ -7,12 +7,12 @@ opt.add("m", "Process <".."%= macros %".."> in source before compiling", functio
 		rava.code[file] = code:gsub("%<%[%[(.-)%]%]%>", function(chunk)
 			if chunk and file then
 				if not printed then
-					msg.info("Running Macros in ".. file .."... ")
+					msg.info("Macros in " .. file)
 
 					printed = true
 				end
 
-				local fn, err = loadstring(chunk)
+				local fn, err = loadstring(chunk:gsub("^=", "return "))
 
 				if err then
 					msg.fatal("Macro failed: "..tostring(err))
@@ -23,7 +23,7 @@ opt.add("m", "Process <".."%= macros %".."> in source before compiling", functio
 				if ok then
 					return tostring(r)
 				else
-					msg.fatal("Macro failed to execute: "..tostring(r))
+					msg.fatal("Macro failed: "..tostring(r))
 				end
 			end
 		end)
