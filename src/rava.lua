@@ -1,7 +1,7 @@
-local bcsave = require("libs/bcsave").start
+local bytecode = require("libs/bcsave").start
 local preHooks = {}
 local postHooks = {}
-local maincode
+local ccargs = os.getenv("CCARGS") or ""
 local mainobj
 local objs = {}
 local rava = {}
@@ -226,7 +226,7 @@ function rava.store(variable, store, ...)
 	out:write('return '..variable)
 	out:close()
 
-	bcsave(
+	bytecode(
 		store:gsub("%..+$", "")..".lua",
 		store:gsub("%..+$", "")..".o")
 end
@@ -259,17 +259,17 @@ function rava.compile(binary, ...)
 		OPLEVEL,
 		binary..".a",
 		mainobj,
-		os.getenv("CCARGS").." "..table.concat(objs, " "),
+		ccargs.." "..table.concat(objs, " "),
 		binary)
 
 	-- Call compiler
-	msg.warning(ccall)
+	msg.line(ccall)
 	os.execute(ccall)
 
 	-- run PostHooks
 	callHooks(postHooks, binary)
 
-	print("\n")
+	msg.done()
 end
 
 -- Generate an object file from lua files
@@ -286,7 +286,7 @@ function rava.generate(name, ...)
 		table.insert(calls, arg[i])
 	end
 
-	bcsave(unpack(calls))
+	bytecode(unpack(calls))
 end
 
 -- code repository
