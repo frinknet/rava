@@ -53,16 +53,16 @@ debug: $(LUA_LIBS) $(RAVA) libs/rava.a
 	@echo "==== Generating Rava Debug ===="
 	@echo 'require("src.main")' > ravadebug.lua
 	$(RAVA) --compile ravadebug.lua
-	@echo 'msg.info("Testing Rava")\nmsg.done("Passed\\n")' > ravatest.lua
-	./ravadebug --compile ravatest.lua
 	@echo 'if #arg > 0 then rava.exec(unpack(arg)) ' \
 		'else msg.line("Usage: "..arg[0]:gsub("^.*/", "").." file.lua\\n\\n") ' \
 		'end' > ravaexec.lua
-	./ravadebug --compile ravaexec.lua
+	./ravadebug -cs --compile ravaexec.lua
 	@echo 'if #arg > 0 then rava.eval(unpack(arg)) ' \
 		'else msg.line("Usage: "..arg[0]:gsub("^.*/", "").." file.lua\\n\\n") ' \
 		'end' > ravaeval.lua
-	./ravadebug --compile ravaeval.lua
+	./ravadebug -cs --compile ravaeval.lua
+	@echo 'msg.add("Compiled at <[[=os.date()]]>\\n")' > ravatime.lua
+	./ravadebug -csm --compile ravatime.lua
 	@echo "==== Generated Rava Debug ===="
 
 $(RAVA_DEPS): $(RAVA) $(RAVA_SRC) $(LUA_LIBS)
@@ -74,7 +74,7 @@ $(RAVA_DEPS): $(RAVA) $(RAVA_SRC) $(LUA_LIBS)
 	$(CC) -c src/rava.c -Ilibs/ -o src/rava.o
 	$(LD) -r src/rava.o src/init.lua.o src/rava.lua.o \
 		src/opt.lua.o src/msg.lua.o libs/libluajit.a -o libs/rava.a
-	$(RAVA) --store=ravastore libs/ravastore.o libs/rava.a
+	$(RAVA) --datastore=ravastore libs/ravastore.o libs/rava.a
 	@echo "==== Generated Rava Core ===="
 
 $(LUA_LIBS): $(LUA_DEPS)
