@@ -51,21 +51,15 @@ end
 
 -- Add option definer
 opt.add = function(opt, def, act)
+	table.insert(opt_seq, opt)
+
 	if def then
 		opt_def[opt] = def
 	end
 
 	if act then
-			local x = string.find(opt, "=", 1, true)
-
-			if x then
-				opt = string.sub(opt, 1, x - 1)
-			end
-
-			opt_act[opt] = act
+			opt_act[opt:gsub("=.*$", "")] = act
 	end
-
-	table.insert(opt_seq, opt)
 end
 
 opt.show = function()
@@ -76,17 +70,15 @@ opt.show = function()
 			k = "-"..k
 		end
 
-		if v then
-			msg.line("\t-"..k.."\t"..v)
-		end
+		msg.format("\n\t-%s\t%s", k, v or "")
 	end
 end
 
 opt.run = function(k, ...)
 	if k == nil or k == "*all" then
 		for _, k in pairs(opt_seq) do
-			if opt_lst[k] then
-				opt.run(k, ...)
+			if opt_lst[k:gsub("=.*$", "")] then
+				opt.run(k:gsub("=.*$", ""), ...)
 			end
 		end
 	else
