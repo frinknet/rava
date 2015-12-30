@@ -84,8 +84,8 @@ opt.add("compile=name", "Compile a binary from lua files", function(name, file, 
 		name = file:gsub("%..-$", "")
 	end
 
-	msg.format("%s v%s - %s", APPNAME, VERSION, jit.version)
-	msg.line("Compiling "..name.." from:")
+	msg.format("%s v%s - %s\n\nCompiling %s from file: ",
+		APPNAME, VERSION, jit.version, name)
 	msg.dump(...)
 	rava.compile(name, file, ...)
 	msg.line()

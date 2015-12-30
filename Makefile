@@ -20,7 +20,7 @@ CC=gcc
 LD=ld
 RAVA=libs/luajit src/main.lua
 
-default all $(INSTALL_DEP): $(RAVA) $(RAVA_DEPS)
+default all $(INSTALL_DEP): $(LUA_LIBS) $(RAVA) $(RAVA_DEPS)
 	$(MAKE) git
 	@echo "==== Building Rava $(VERSION) ===="
 	$(RAVA) -csnr --compile=rava src/main.lua modules/*.lua
@@ -63,8 +63,8 @@ debug: $(LUA_LIBS) $(RAVA) $(RAVA_DEPS)
 	./ravadebug -cs --compile ravaeval.lua
 	@echo 'msg.add("Compiled at <[[=os.date()]]>\\n")' > ravatime.lua
 	./ravadebug -csm --compile ravatime.lua
-	$(RAVA) -csnr --compile=rava src/main.lua modules/*.lua
 	@echo "==== Generated Rava Debug ===="
+	$(MAKE) $(INSTALL_DEP)
 
 $(RAVA_DEPS): $(RAVA) $(RAVA_SRC) $(LUA_LIBS)
 	@echo "==== Generating Rava Core ===="
