@@ -6,6 +6,9 @@ deps/luajit/src/jit/bcsave.lua
 LUA_LIBS=libs/luajit libs/lua.h libs/lualib.h libs/luaconf.h libs/lauxlib.h \
 libs/libluajit.a libs/bcsave.lua
 
+LIBUV_DEPS=deps/libuv/libuv.la
+LIBUV_LIBS=libs/libuv.la
+
 RAVA_SRC=src/rava.c src/rava.lua src/msg.lua src/opt.lua src/init.lua
 RAVA_DEPS=libs/rava.a
 
@@ -74,5 +77,14 @@ clean-all: clean
 $(LUA_LIBS): $(LUA_DEPS)
 	cp $+ libs/
 
+$(LIBUV_LIBS): $(LIBUV_DEPS)
+	cp $+ libs/
+
 $(LUA_DEPS):
 	$(MAKE) -C deps/luajit/
+
+$(LIBUV_DEPS):
+	cd deps/libuv && sh autogen.sh
+	cd deps/libuv && sh autogen.sh
+	cd deps/libuv && sh comfigure
+	$(MAKE) check -C deps/libuv/
