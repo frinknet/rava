@@ -26,7 +26,7 @@ all: rava
 
 rava: deps-rava
 	@echo "==== Building Rava $(VERSION) ===="
-	$(RAVA) -csnr --compile=rava src/main.lua modules/*.lua
+	$(RAVA) -csn --compile=rava src/main.lua modules/*.lua
 	@echo "==== Successfully built Rava $(VERSION) ===="
 
 debug: deps-rava
