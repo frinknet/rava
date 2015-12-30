@@ -77,7 +77,7 @@ opt.show = function()
 		end
 
 		if v then
-			print("\t-"..k.."\t"..v)
+			msg.line("\t-"..k.."\t"..v)
 		end
 	end
 end

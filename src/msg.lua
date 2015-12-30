@@ -18,7 +18,7 @@ msg.indent = function(str)
 end
 
 msg.format = function(str, ...)
-	msg.line(str:format(...))
+	msg.add(str:format(...))
 end
 
 msg.color = function(c, m, ...)

@@ -11,22 +11,22 @@ RAVABIN = arg[0]
 
 -- Make sure ravabin is defined properly
 if arg[-1] ~= nil then
-	RAVABIN = arg[-1].." "..RAVABIN
+	RAVABIN = arg[-1].." "..arg[0]
 end
 
 -- Help
 opt.add("h", "Show this help dialog", function(r)
-	print(APPNAME.." v"..VERSION.." - "..jit.version.."\n")
-	print("\tUsage:\n")
-	print("\t"..RAVABIN.." [opt] files objects\n")
-	print("\tOptions:\n")
+	msg.format("%s v%s - %s", APPNAME, VERSION, jit.version)
+	msg.line("\tUsage:\n")
+	msg.line("\t"..RAVABIN:gsub("^.*/", "").." [opt] files objects\n")
+	msg.line("\tOptions:\n")
 	opt.show()
-	print("")
-	print("\tExamples:\n")
-	print("\t"..RAVABIN.." --exec test.lua")
-	print("\t"..RAVABIN.." --eval \"print('hello world.')\"")
-	print("\t"..RAVABIN.." --compile=appsvr app.lua server.a")
-	print("\t"..RAVABIN.." --generate=main main.lua main.lua.o\n")
+	msg.line("")
+	msg.line("\tExamples:\n")
+	msg.line("\t"..RAVABIN:gsub("^.*/", "").." --exec test.lua")
+	msg.line("\t"..RAVABIN:gsub("^.*/", "").." --eval \"print('hello world.')\"")
+	msg.line("\t"..RAVABIN:gsub("^.*/", "").." --compile=appsvr app.lua server.a")
+	msg.line("\t"..RAVABIN:gsub("^.*/", "").." --generate=main main.lua main.lua.o\n")
 	os.exit(r == false)
 end)
 
@@ -41,12 +41,7 @@ end)
 
 -- No output at all.
 opt.add("Q", nil, function()
-	function msg.fatal() end
-	function msg.error(...) end
-	function msg.warning(...) end
-	function msg.info(...) end
-	function msg.done(...) end
-	function msg.fail(...) end
+	function msg.add() end
 	function print(...) end
 end)
 
@@ -66,48 +61,51 @@ for _,mod in pairs(modules) do
 end
 
 -- Run lua from commandline
-opt.add("eval", "Evaluates a string lua code", function(...)
+opt.add("eval", "Evaluates a string lua code", function(flag, ...)
 	rava.eval(...)
 	os.exit(0)
 end)
 
 -- Run files instead of compiling
-opt.add("exec", "Executes files in rava runtime environment", function(...)
+opt.add("exec", "Executes files in rava runtime environment", function(flag, ...)
 	rava.exec(...)
 
 	os.exit(0)
 end)
 
 -- Generate binary data store
-opt.add("store=variable", "Generate a lua data store of binary files", function(...)
-	print(APPNAME.." v"..VERSION.." - "..jit.version.."\n")
+opt.add("store=variable", "Generate a lua data store of binary files", function(name, store, ...)
+	msg.format("%s v%s - %s", APPNAME, VERSION, jit.version)
 
-	rava.store(...)
+	rava.store(name, store, ...)
 	os.exit(0)
 end)
 
 -- Compile binary
-opt.add("compile=binary", "Compile a binary from lua files", function(binary, ...)
-	print(APPNAME.." v"..VERSION.." - "..jit.version)
-	msg.line("Compiling "..binary.." from:")
-	msg.dump(...)
-
-	rava.compile(binary, ...)
-	msg.line()
+opt.add("compile=binary", "Compile a binary from lua files", function(binary, alt, ...)
+	if alt == nil then
+		return opt.run("h")
+	else
+		msg.format("%s v%s - %s", APPNAME, VERSION, jit.version)
+		msg.line("Compiling "..binary.." from:")
+		msg.dump(...)
+		rava.compile(binary, ...)
+		msg.line()
+	end
 
 	os.exit(0)
 end)
 
 -- Generate bytecode object
-opt.add("generate=module", "Generate a lua file to bytecode object", function(...)
+opt.add("generate=module", "Generate a lua file to bytecode object", function(module, ...)
 	local arg = {...}
 
 	if #arg < 2 then
-		print(APPNAME.." v"..VERSION.." - "..jit.version.."\n")
-		print("\tUsage: "..RAVABIN.." --generate [opt]\n")
+		msg.format("%s v%s - %s", APPNAME, VERSION, jit.version)
+		msg.line("\tUsage: "..RAVABIN:gsub("^.*/", "").." --generate [opt]\n")
 	end
 
-	rava.generate(...)
+	rava.generate(module, ...)
 	os.exit(0)
 end)
 
