@@ -3,51 +3,63 @@ local function ansiesc(num)
 	return (string.char(27) .. '[%dm'):format(num)
 end
 
-local function message(c, m, ...)
-	io.stderr:write("\n"..ansiesc(c).."["..m:upper().."]".. ansiesc(0) .. " "..table.concat({...},"\t"))
+msg.out = io.stderr
+
+msg.add = function(str)
+	msg.out:write(str)
 end
 
-msg.done = function(msg)
-	io.stderr:write(" "..ansiesc(32)..(msg or "Done.")..ansiesc(0))
+msg.line = function(str)
+	msg.add("\n"..(str or ""))
 end
 
-msg.fail = function(msg)
-	io.stderr:write(" "..ansiesc(31)..(msg or "Failed!")..ansiesc(0))
+msg.indent = function(str)
+	msg.line("\t"..(str or ""))
 end
 
-msg.line = function(msg)
-	io.stderr:write(msg)
+msg.format = function(str, ...)
+	msg.line(str:format(...))
 end
 
-msg.printf = function(msg, ...)
-	io.write(msg:format(...).."\n")
+msg.color = function(c, m, ...)
+	msg.line(ansiesc(c).."["..m:upper().."]".. ansiesc(0) .. " "..table.concat({...} or {},"\t"))
+end
+
+msg.done = function(str)
+	msg.add(" "..ansiesc(32)..(str or "Done.")..ansiesc(0))
+end
+
+msg.fail = function(str)
+	msg.add(" "..ansiesc(31)..(str or "Failed!")..ansiesc(0))
 end
 
 msg.fatal = function(...)
-	message(31, "fatal", ..., "\n\n")
+	msg.color(31, "fatal", ..., "\n\n")
 	os.exit(1)
 end
 
 msg.error = function(...)
-	message(31, "error", ...)
+	msg.color(31, "error", ...)
 end
 
 msg.warning = function(...)
-	message(33, "warning", ...)
+	msg.color(33, "warning", ...)
 end
 
 msg.info = function(...)
-	message(32, "info", ...)
+	msg.color(32, "info", ...)
 end
 
-function msg.dump(...)
+msg.dump = function(...)
 	local arg = {...}
 
-	for i=1, #arg do
-		print(arg[i])
+	for i=0, #arg do
+		msg.indent(arg[i])
 	end
 
-	os.exit(1)
+	msg.line()
 end
+
+module(...)
 
 return msg
