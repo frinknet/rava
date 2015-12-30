@@ -7,7 +7,12 @@ rava = require("src.rava")
 APPNAME = "Rava Micro-Service Compiler"
 VERSION = "2.0.1"
 OPLEVEL = 1
-RAVABIN = arg[-1].." "..arg[0]
+RAVABIN = arg[0]
+
+-- Make sure ravabin is defined properly
+if arg[-1] ~= nil then
+	RAVABIN = arg[-1].." "..RAVABIN
+end
 
 -- Help
 opt.add("h", "Show this help dialog", function(r)
@@ -82,12 +87,14 @@ opt.add("store=variable", "Generate a lua data store of binary files", function(
 end)
 
 -- Compile binary
-opt.add("compile=binary", "Compile a binary from lua files", function(...)
+opt.add("compile=binary", "Compile a binary from lua files", function(binary, ...)
 	print(APPNAME.." v"..VERSION.." - "..jit.version)
-	print("\tYou are running: "..RAVABIN.." --generate")
-	print("\tThis is identical to: luajit -b\n")
+	msg.line("Compiling "..binary.." from:")
+	msg.dump(...)
 
-	rava.compile(...)
+	rava.compile(binary, ...)
+	msg.line()
+
 	os.exit(0)
 end)
 
