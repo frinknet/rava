@@ -14,7 +14,7 @@ msg.line = function(str)
 end
 
 msg.indent = function(str)
-	msg.line("\t"..(str or ""))
+	msg.add("\n\t"..(str or ""))
 end
 
 msg.format = function(str, ...)
@@ -39,11 +39,11 @@ msg.fatal = function(...)
 end
 
 msg.error = function(...)
-	msg.color(31, "error", ...)
+	msg.color(31, "help", ...)
 end
 
 msg.warning = function(...)
-	msg.color(33, "warning", ...)
+	msg.color(33, "warn", ...)
 end
 
 msg.info = function(...)
@@ -53,7 +53,7 @@ end
 msg.dump = function(...)
 	local arg = {...}
 
-	for i=0, #arg do
+	for i=1, #arg do
 		msg.indent(arg[i])
 	end
 
