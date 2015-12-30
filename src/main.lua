@@ -32,16 +32,17 @@ opt.add("h", "Show this help dialog", function(r)
 end)
 
 -- No output, except Errors..
-opt.add("q", "Quiet for the most part, excludes Errors", function()
+opt.add("q", "Quiet except for errors", function()
 	function msg.warning(...) end
 	function msg.info(...) end
 	function msg.done(...) end
 	function msg.fail(...) end
+	function msg.line(...) end
 	function print(...) end
 end)
 
 -- No output at all.
-opt.add("Q", nil, function()
+opt.add("Q", "Quelch everything including error", function()
 	function msg.add() end
 	function print(...) end
 end)
@@ -97,7 +98,7 @@ end)
 opt.add("generate=name", "Generate a lua file to bytecode object", function(name, file, ...)
 	local arg = {...}
 
-	if #arg < 2 then
+	if file == nil then
 		msg.format("%s v%s - %s", APPNAME, VERSION, jit.version)
 		msg.line("\tUsage: "..RAVABIN:gsub("^.*/", "").." --generate [opt]\n")
 	end

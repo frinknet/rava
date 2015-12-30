@@ -14,7 +14,7 @@ msg.line = function(str)
 end
 
 msg.indent = function(str)
-	msg.add("\n\t"..(str or ""))
+	msg.line("\t"..(str or ""))
 end
 
 msg.format = function(str, ...)
@@ -22,7 +22,7 @@ msg.format = function(str, ...)
 end
 
 msg.color = function(c, m, ...)
-	msg.line(ansiesc(c).."["..m:upper().."]".. ansiesc(0) .. " "..table.concat({...} or {},"\t"))
+	msg.add("\n"..ansiesc(c).."["..m:upper().."]".. ansiesc(0) .. " "..table.concat({...} or {},"\t"))
 end
 
 msg.done = function(str)
