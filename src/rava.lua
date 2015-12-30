@@ -1,4 +1,4 @@
-local bytecode = require("libs.luajit.bcsave").start
+local bytecode = require("libs.luajit.bcsave")
 local preHooks = {}
 local postHooks = {}
 local ccargs = os.getenv("CCARGS") or ""
@@ -228,9 +228,7 @@ function rava.compile(name, ...)
 end
 
 -- Generate an object file from lua files
-function rava.generate(...)
-	bytecode(...)
-end
+rava.generate = bytecode.start
 
 -- Generate binary datastore
 function rava.datastore(name, store, ...)
