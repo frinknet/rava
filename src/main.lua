@@ -108,8 +108,6 @@ end)
 
 -- Generate binary data store
 opt.add("datastore=name", "Generate a lua data store of binary files", function(name, store, ...)
-	msg.format("%s v%s - %s", APPNAME, VERSION, jit.version)
-
 	rava.datastore(name, store, ...)
 	os.exit(0)
 end)

@@ -1,35 +1,35 @@
 VERSION=2.0.1
 
-LUA_DEPS=deps/luajit/src/luajit deps/luajit/src/lua.h deps/luajit/src/lualib.h \
-deps/luajit/src/luaconf.h deps/luajit/src/lauxlib.h deps/luajit/src/libluajit.a \
+LUA_DEPS=deps/luajit/src/luajit deps/luajit/src/*.h deps/luajit/src/libluajit.a \
 deps/luajit/src/jit/bcsave.lua
-LUA_LIBS=libs/luajit libs/lua.h libs/lualib.h libs/luaconf.h libs/lauxlib.h \
-libs/libluajit.a libs/bcsave.lua
+LUA_LIBS=libs/luajit/luajit libs/luajit/lua.h libs/luajit/lualib.h \
+libs/luajit/luaconf.h libs/luajit/lauxlib.h libs/luajit/libluajit.a \
+libs/luajit/bcsave.lua
 
-LIBUV_DEPS=deps/libuv/libuv.la
-LIBUV_LIBS=libs/libuv.la
+LIBUV_DEPS=deps/libuv/.libs/libuv.a deps/libuv/include/*
+LIBUV_LIBS=libs/libuv/libuv.a
 
 RAVA_SRC=src/rava.c src/rava.lua src/msg.lua src/opt.lua src/init.lua
-RAVA_DEPS=libs/rava.a
+RAVA_LIBS=libs/rava.a
 
 DPREFIX=$(DESTDIR)$(PREFIX)
 INSTALL_BIN=$(DPREFIX)/bin
 INSTALL_DEP=rava
 
-CCARGS=-Ilibs/
+CCARGS=-Ilibs/luajit/
 
 CC=gcc
 LD=ld
-RAVA=libs/luajit src/main.lua
+RAVA=libs/luajit/luajit src/main.lua
 
 all: rava
 
-rava: $(LUA_LIBS) $(RAVA_DEPS)
+rava: deps-rava
 	@echo "==== Building Rava $(VERSION) ===="
 	$(RAVA) -csnr --compile=rava src/main.lua modules/*.lua
 	@echo "==== Successfully built Rava $(VERSION) ===="
 
-debug: $(LUA_LIBS) $(RAVA_DEPS)
+debug: deps-rava
 	@echo "==== Generating Rava Debug ===="
 	@echo 'require("src.main")' > ravadebug.lua
 	$(RAVA) --compile ravadebug.lua
@@ -46,18 +46,6 @@ debug: $(LUA_LIBS) $(RAVA_DEPS)
 	@echo "==== Generated Rava Debug ===="
 	$(MAKE) $(INSTALL_DEP)
 
-$(RAVA_DEPS): $(LUA_LIBS)
-	@echo "==== Generating Rava Core ===="
-	$(RAVA) --generate=init src/init.lua src/init.lua.o
-	$(RAVA) --generate src/rava.lua src/rava.lua.o
-	$(RAVA) --generate src/opt.lua src/opt.lua.o
-	$(RAVA) --generate src/msg.lua src/msg.lua.o
-	$(CC) -c src/rava.c -Ilibs/ -o src/rava.o
-	$(LD) -r src/rava.o src/init.lua.o src/rava.lua.o \
-		src/opt.lua.o src/msg.lua.o libs/libluajit.a -o libs/rava.a
-	$(RAVA) --datastore=ravastore libs/ravastore.o libs/rava.a
-	@echo "==== Generated Rava Core ===="
-
 install: all
 	@echo "==== Installing Rava $(VERSION) to $(PREFIX) ===="
 	cp $+ $(INSTALL_BIN)
@@ -71,14 +59,42 @@ uninstall:
 clean:
 	rm -rf libs/* src/*.o modules/*.o rava*
 
-clean-all: clean
+clean-all: clean clean-luajit clean-libuv
+
+clean-luajit:
 	$(MAKE) clean -C deps/luajit/
+	cd deps/luajit/ && git clean -dfx
+
+clean-libuv:
+	$(MAKE) clean -C deps/libuv/
+	cd deps/libuv/ && git clean -dfx
+
+deps: deps-luajit deps-libuv deps-rava
+
+deps-luajit: $(LUA_LIBS)
+deps-libuv: $(LIBUV_LIBS)
+deps-rava: $(RAVA_LIBS)
+
+$(RAVA_LIBS): $(LUA_LIBS) $(LIBUV_LIBS)
+	@echo "==== Generating Rava Core ===="
+	$(RAVA) --generate=init src/init.lua src/init.lua.o
+	$(RAVA) --generate src/rava.lua src/rava.lua.o
+	$(RAVA) --generate src/opt.lua src/opt.lua.o
+	$(RAVA) --generate src/msg.lua src/msg.lua.o
+	$(CC) -c src/rava.c $(CCARGS) -o src/rava.o
+	$(LD) -r src/rava.o src/init.lua.o src/rava.lua.o \
+		src/opt.lua.o src/msg.lua.o libs/luajit/libluajit.a libs/libuv/libuv.a \
+	 	-o libs/rava.a
+	$(RAVA) --datastore=ravastore libs/ravastore.o libs/rava.a
+	@echo "==== Generated Rava Core ===="
 
 $(LUA_LIBS): $(LUA_DEPS)
-	cp $+ libs/
+	mkdir -p libs/luajit/
+	cp $+ libs/luajit/
 
 $(LIBUV_LIBS): $(LIBUV_DEPS)
-	cp $+ libs/
+	mkdir -p libs/libuv/
+	cp $+ libs/libuv/
 
 $(LUA_DEPS):
 	$(MAKE) -C deps/luajit/
@@ -86,5 +102,5 @@ $(LUA_DEPS):
 $(LIBUV_DEPS):
 	cd deps/libuv && sh autogen.sh
 	cd deps/libuv && sh autogen.sh
-	cd deps/libuv && sh comfigure
+	cd deps/libuv && sh configure
 	$(MAKE) check -C deps/libuv/
