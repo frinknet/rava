@@ -16,17 +16,18 @@ end
 
 -- Help
 opt.add("h", "Show this help dialog", function(r)
-	msg.format("%s v%s - %s", APPNAME, VERSION, jit.version)
+	msg.format("%s v%s - %s\n", APPNAME, VERSION, jit.version)
 	msg.line("\tUsage:\n")
 	msg.line("\t"..RAVABIN:gsub("^.*/", "").." [opt] files objects\n")
 	msg.line("\tOptions:\n")
 	opt.show()
-	msg.line("")
+	msg.line()
 	msg.line("\tExamples:\n")
 	msg.line("\t"..RAVABIN:gsub("^.*/", "").." --exec test.lua")
 	msg.line("\t"..RAVABIN:gsub("^.*/", "").." --eval \"print('hello world.')\"")
 	msg.line("\t"..RAVABIN:gsub("^.*/", "").." --compile=appsvr app.lua server.a")
 	msg.line("\t"..RAVABIN:gsub("^.*/", "").." --generate=main main.lua main.lua.o\n")
+	msg.line()
 	os.exit(r == false)
 end)
 
