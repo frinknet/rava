@@ -53,6 +53,8 @@ end
 msg.dump = function(...)
 	local arg = {...}
 
+	msg.line()
+
 	for i=1, #arg do
 		msg.indent(arg[i])
 	end

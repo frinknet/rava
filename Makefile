@@ -81,10 +81,11 @@ $(RAVA_LIBS): $(LUA_LIBS) $(LIBUV_LIBS)
 	$(RAVA) --generate src/rava.lua src/rava.lua.o
 	$(RAVA) --generate src/opt.lua src/opt.lua.o
 	$(RAVA) --generate src/msg.lua src/msg.lua.o
+	$(RAVA) --generate libs/luajit/bcsave.lua libs/luajit/bcsave.lua.o
 	$(CC) -c src/rava.c $(CCARGS) -o src/rava.o
-	$(LD) -r src/rava.o src/init.lua.o src/rava.lua.o \
-		src/opt.lua.o src/msg.lua.o libs/luajit/libluajit.a libs/libuv/libuv.a \
-	 	-o libs/rava.a
+	$(LD) -r -static src/rava.o src/init.lua.o src/rava.lua.o \
+		src/opt.lua.o src/msg.lua.o libs/luajit/bcsave.lua.o \
+		libs/luajit/libluajit.a libs/libuv/libuv.a -o libs/rava.a
 	$(RAVA) --datastore=ravastore libs/ravastore.o libs/rava.a
 	@echo "==== Generated Rava Core ===="
 

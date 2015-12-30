@@ -45,7 +45,7 @@ local function generateCodeObject(path, name)
 	local objpath = path
 	local leavesym = ""
 
-	name = name or (dir:gsub("^%./",""):gsub("^/",""):gsub("/",".") .. file:gsub("%.lua$",""))
+	name = name or (dir:gsub("^%./",""):gsub("^/",""):gsub("/","/") .. file:gsub("%.lua$",""))
 
 	-- First file we add is always main
 	if mainobj == nil then
