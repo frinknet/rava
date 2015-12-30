@@ -77,11 +77,12 @@ deps-rava: $(RAVA_LIBS)
 
 $(RAVA_LIBS): $(LUA_LIBS) $(LIBUV_LIBS)
 	@echo "==== Generating Rava Core ===="
+	sed -i'.bak' -e's/^Save.\+//' -e's/^  /\t/g' -e's/^File /\t/' -e's/\.$$//' libs/luajit/bcsave.lua
+	$(RAVA) --generate libs/luajit/bcsave.lua libs/luajit/bcsave.lua.o
 	$(RAVA) --generate=init src/init.lua src/init.lua.o
 	$(RAVA) --generate src/rava.lua src/rava.lua.o
 	$(RAVA) --generate src/opt.lua src/opt.lua.o
 	$(RAVA) --generate src/msg.lua src/msg.lua.o
-	$(RAVA) --generate libs/luajit/bcsave.lua libs/luajit/bcsave.lua.o
 	$(CC) -c src/rava.c $(CCARGS) -o src/rava.o
 	$(LD) -r -static src/rava.o src/init.lua.o src/rava.lua.o \
 		src/opt.lua.o src/msg.lua.o libs/luajit/bcsave.lua.o \

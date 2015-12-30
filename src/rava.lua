@@ -243,13 +243,13 @@ function rava.datastore(name, store, ...)
 	for _, file in pairs(files) do
 		local ins = io.open(file, "r")
 
+		-- test for failed open
 		if not ins then
 			msg.fatal("Error reading " .. file)
 		end
 
 		-- add file entry to table
 		out:write(name..'["'..file..'"] = "')
-
 
 		-- write all data to store in memory safe way
 		repeat
@@ -264,11 +264,12 @@ function rava.datastore(name, store, ...)
 		out:write('"\n')
 	end
 
+	-- add module code
 	out:write('\nmodule(...)\n')
 	out:write('return '..name)
 	out:close()
 
-	bytecode(store:gsub("%..+$", "")..".lua", store:gsub("%..+$", "")..".o")
+	rava.generate(store:gsub("%..+$", "")..".lua", store:gsub("%..+$", "")..".o")
 end
 
 -- code repository

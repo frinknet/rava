@@ -99,8 +99,10 @@ opt.add("generate=name", "Generate a lua file to bytecode object", function(name
 	local arg = {...}
 
 	if file == nil then
-		msg.format("%s v%s - %s", APPNAME, VERSION, jit.version)
-		msg.line("\tUsage: "..RAVABIN:gsub("^.*/", "").." --generate [opt]\n")
+		msg.format("%s v%s - %s\n", APPNAME, VERSION, jit.version)
+		msg.indent("Usage: "..RAVABIN:gsub("^.*/", "").." --generate [opt]\n")
+		rava.generate()
+		msg.line()
 	end
 
 	file = file:gsub("^%./",""):gsub("^/","")
