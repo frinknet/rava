@@ -85,13 +85,17 @@ end)
 opt.add("compile=binary", "Compile a binary from lua files", function(binary, alt, ...)
 	if alt == nil then
 		return opt.run("h")
-	else
-		msg.format("%s v%s - %s", APPNAME, VERSION, jit.version)
-		msg.line("Compiling "..binary.." from:")
-		msg.dump(...)
-		rava.compile(binary, ...)
-		msg.line()
 	end
+
+	if binary == true then
+		binary = alt:gsub("%..-$", "")
+	end
+
+	msg.format("%s v%s - %s", APPNAME, VERSION, jit.version)
+	msg.line("Compiling "..binary.." from:")
+	msg.dump(...)
+	rava.compile(binary, nil, ...)
+	msg.line()
 
 	os.exit(0)
 end)

@@ -52,17 +52,17 @@ clean-all: clean
 debug: $(LUA_LIBS) $(RAVA) libs/rava.a
 	@echo "==== Generating Rava Debug ===="
 	@echo 'require("src.main")' > ravadebug.lua
-	$(RAVA) --compile=ravadebug ravadebug.lua
+	$(RAVA) --compile ravadebug.lua
 	@echo 'msg.info("Testing Rava")\nmsg.done("Passed\\n")' > ravatest.lua
-	./ravadebug --compile=ravatest ravatest.lua
+	./ravadebug --compile ravatest.lua
 	@echo 'if #arg > 0 then rava.exec(unpack(arg)) ' \
 		'else msg.line("Usage: "..arg[0]:gsub("^.*/", "").." file.lua\\n\\n") ' \
 		'end' > ravaexec.lua
-	./ravadebug --compile=ravaexec ravaexec.lua
+	./ravadebug --compile ravaexec.lua
 	@echo 'if #arg > 0 then rava.eval(unpack(arg)) ' \
 		'else msg.line("Usage: "..arg[0]:gsub("^.*/", "").." file.lua\\n\\n") ' \
 		'end' > ravaeval.lua
-	./ravadebug --compile=ravaeval ravaeval.lua
+	./ravadebug --compile ravaeval.lua
 	@echo "==== Generated Rava Debug ===="
 
 $(RAVA_DEPS): $(RAVA) $(RAVA_SRC) $(LUA_LIBS)
