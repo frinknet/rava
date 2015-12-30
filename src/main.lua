@@ -73,35 +73,27 @@ opt.add("exec", "Executes files in rava runtime environment", function(flag, ...
 	os.exit(0)
 end)
 
--- Generate binary data store
-opt.add("store=variable", "Generate a lua data store of binary files", function(name, store, ...)
-	msg.format("%s v%s - %s", APPNAME, VERSION, jit.version)
-
-	rava.store(name, store, ...)
-	os.exit(0)
-end)
-
 -- Compile binary
-opt.add("compile=binary", "Compile a binary from lua files", function(binary, alt, ...)
-	if alt == nil then
+opt.add("compile=name", "Compile a binary from lua files", function(name, file, ...)
+	if file == nil then
 		return opt.run("h")
 	end
 
-	if binary == true then
-		binary = alt:gsub("%..-$", "")
+	if name == true then
+		name = file:gsub("%..-$", "")
 	end
 
 	msg.format("%s v%s - %s", APPNAME, VERSION, jit.version)
-	msg.line("Compiling "..binary.." from:")
+	msg.line("Compiling "..name.." from:")
 	msg.dump(...)
-	rava.compile(binary, nil, ...)
+	rava.compile(name, file, ...)
 	msg.line()
 
 	os.exit(0)
 end)
 
 -- Generate bytecode object
-opt.add("generate=module", "Generate a lua file to bytecode object", function(module, ...)
+opt.add("generate=name", "Generate a lua file to bytecode object", function(name, ...)
 	local arg = {...}
 
 	if #arg < 2 then
@@ -109,7 +101,15 @@ opt.add("generate=module", "Generate a lua file to bytecode object", function(mo
 		msg.line("\tUsage: "..RAVABIN:gsub("^.*/", "").." --generate [opt]\n")
 	end
 
-	rava.generate(module, ...)
+	rava.generate(name, ...)
+	os.exit(0)
+end)
+
+-- Generate binary data store
+opt.add("datastore=name", "Generate a lua data store of binary files", function(name, store, ...)
+	msg.format("%s v%s - %s", APPNAME, VERSION, jit.version)
+
+	rava.datastore(name, store, ...)
 	os.exit(0)
 end)
 
