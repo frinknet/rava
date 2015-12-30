@@ -78,7 +78,7 @@ local function generateCodeObject(file)
 
 		-- create CC line
 		local f = io.popen(string.format(
-			"%s -q %s --generate=%s %s %s",
+			"%s -q %s --bytecode=%s %s %s",
 			RAVABIN,
 			leavesym,
 			name,
@@ -111,7 +111,7 @@ end
 -- list files in a directory
 rava.scandir = function(dir)
 	local r = {}
-	for file in io.popen("ls -a '"..dir.."'"):lines() do
+	for file in io.popen("ls -a '"..dir.."' 2>/dev/null"):lines() do
 		table.insert(r, file)
 	end
 
@@ -192,6 +192,32 @@ rava.exec = function(...)
 	end
 end
 
+rava.build = function(name, ...)
+	mainobj = true
+	name = name..".a"
+
+	--load Lua Code
+	rava.addFile(...)
+
+	msg.info("Building "..name.." library... ")
+
+	-- Construct compiler call
+	local ccall = string.format([[
+		%s -r -static %s \
+		-o %s ]],
+		os.getenv("LD") or "ld",
+		table.concat(objs, " "),
+		name)
+
+	-- Call compiler
+	os.execute(ccall)
+
+	msg.done()
+
+	-- run PostHooks
+	callHooks(postHooks, name)
+end
+
 -- Compile the rava object state to binary
 rava.compile = function(name, ...)
 	--load Lua Code
@@ -202,7 +228,7 @@ rava.compile = function(name, ...)
 	local f, err = io.open(name..".a", "w+")
 	local files = require("libs"..".ravastore")
 
-	f:write(files["libs/rava.a"])
+	f:write(files["rava.a"])
 	f:close()
 
 	-- Construct compiler call
@@ -228,7 +254,7 @@ rava.compile = function(name, ...)
 end
 
 -- Generate an object file from lua files
-rava.generate = bytecode.start
+rava.bytecode = bytecode.start
 
 -- Generate binary datastore
 rava.datastore = function(name, store, ...)
@@ -269,7 +295,7 @@ rava.datastore = function(name, store, ...)
 	out:write('return '..name)
 	out:close()
 
-	rava.generate(store:gsub("%..+$", "")..".lua", store:gsub("%..+$", "")..".o")
+	rava.bytecode(store:gsub("%..+$", "")..".lua", store:gsub("%..+$", "")..".o")
 end
 
 -- code repository

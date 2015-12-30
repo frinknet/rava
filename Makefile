@@ -1,5 +1,7 @@
 VERSION=2.0.1
 
+export PREFIX=/usr/local
+
 LUA_DEPS=deps/luajit/src/luajit deps/luajit/src/*.h deps/luajit/src/libluajit.a \
 deps/luajit/src/jit/bcsave.lua
 LUA_LIBS=libs/luajit/luajit libs/luajit/lua.h libs/luajit/lualib.h \
@@ -27,7 +29,7 @@ all: rava
 rava: deps-rava
 	@echo "==== Building Rava $(VERSION) ===="
 	$(RAVA) -csn --compile=rava src/main.lua modules/*.lua
-	@echo "==== Successfully built Rava $(VERSION) ===="
+	@echo "==== Success builting Rava $(VERSION) ===="
 
 debug: deps-rava
 	@echo "==== Generating Rava Debug ===="
@@ -46,9 +48,9 @@ debug: deps-rava
 	@echo "==== Generated Rava Debug ===="
 	$(MAKE) $(INSTALL_DEP)
 
-install: all
+install:
 	@echo "==== Installing Rava $(VERSION) to $(PREFIX) ===="
-	cp $+ $(INSTALL_BIN)
+	cp $(INSTALL_DEP) $(INSTALL_BIN)
 	@echo "==== Installed Rava $(VERSION) to $(PREFIX) ===="
 
 uninstall:
@@ -77,22 +79,18 @@ deps-rava: $(RAVA_LIBS)
 
 $(RAVA_LIBS): $(LUA_LIBS) $(LIBUV_LIBS)
 	@echo "==== Generating Rava Core ===="
-	sed -i'.bak' -e's/^Save.\+//' -e's/^  /\t/g' -e's/^File /\t/' -e's/\.$$//' libs/luajit/bcsave.lua
-	$(RAVA) --generate libs/luajit/bcsave.lua libs/luajit/bcsave.lua.o
-	$(RAVA) --generate=init src/init.lua src/init.lua.o
-	$(RAVA) --generate src/rava.lua src/rava.lua.o
-	$(RAVA) --generate src/opt.lua src/opt.lua.o
-	$(RAVA) --generate src/msg.lua src/msg.lua.o
 	$(CC) -c src/rava.c $(CCARGS) -o src/rava.o
-	$(LD) -r -static src/rava.o src/init.lua.o src/rava.lua.o \
-		src/opt.lua.o src/msg.lua.o libs/luajit/bcsave.lua.o \
-		libs/luajit/libluajit.a libs/libuv/libuv.a -o libs/rava.a
-	$(RAVA) --datastore=ravastore libs/ravastore.o libs/rava.a
+	$(RAVA) --bytecode=init src/init.lua src/init.lua.o
+	$(RAVA) --build=rava src/rava.o src/init.lua.o src/rava.lua \
+		src/opt.lua src/msg.lua libs/luajit/bcsave.lua \
+		libs/luajit/libluajit.a libs/libuv/libuv.a
+	$(RAVA) --datastore=ravastore libs/ravastore.o rava.a
 	@echo "==== Generated Rava Core ===="
 
 $(LUA_LIBS): $(LUA_DEPS)
 	mkdir -p libs/luajit/
 	cp $+ libs/luajit/
+	sed -i'.bak' -e's/^Save.\+//' -e's/^  /\t/g' -e's/^File /\t/' -e's/\.$$//' libs/luajit/bcsave.lua
 
 $(LIBUV_LIBS): $(LIBUV_DEPS)
 	mkdir -p libs/libuv/

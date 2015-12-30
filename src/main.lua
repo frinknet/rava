@@ -26,7 +26,7 @@ opt.add("h", "Show this help dialog", function(r)
 	msg.line("\t"..RAVABIN:gsub("^.*/", "").." --exec test.lua")
 	msg.line("\t"..RAVABIN:gsub("^.*/", "").." --eval \"print('hello world.')\"")
 	msg.line("\t"..RAVABIN:gsub("^.*/", "").." --compile=appsvr app.lua server.a")
-	msg.line("\t"..RAVABIN:gsub("^.*/", "").." --generate=main main.lua main.lua.o\n")
+	msg.line("\t"..RAVABIN:gsub("^.*/", "").." --bytecode=main main.lua main.lua.o\n")
 	msg.line()
 	os.exit(r == false)
 end)
@@ -75,6 +75,27 @@ opt.add("exec", "Executes files in rava runtime environment", function(flag, ...
 	os.exit(0)
 end)
 
+-- Build library
+opt.add("build=name", "Build a lua library from files", function(name, file, ...)
+	if file == nil then
+		return opt.run("h")
+	end
+
+	if name == true then
+		name = file:gsub("%..-$", "")
+	end
+
+	name = name:gsub("%.[ao]$", ""):gsub("%.lua$", "")
+
+	msg.format("%s v%s - %s\n\nBuilding %s.a library from: ",
+		APPNAME, VERSION, jit.version, name)
+	msg.dump(file, ...)
+	rava.build(name, file, ...)
+	msg.line()
+
+	os.exit(0)
+end)
+
 -- Compile binary
 opt.add("compile=name", "Compile a binary from lua files", function(name, file, ...)
 	if file == nil then
@@ -95,13 +116,13 @@ opt.add("compile=name", "Compile a binary from lua files", function(name, file, 
 end)
 
 -- Generate bytecode object
-opt.add("generate=name", "Generate a lua file to bytecode object", function(name, file, ...)
+opt.add("bytecode=name", "Generate a lua file to bytecode object", function(name, file, ...)
 	local arg = {...}
 
 	if file == nil then
 		msg.format("%s v%s - %s\n", APPNAME, VERSION, jit.version)
-		msg.indent("Usage: "..RAVABIN:gsub("^.*/", "").." --generate [opt]\n")
-		rava.generate()
+		msg.indent("Usage: "..RAVABIN:gsub("^.*/", "").." --bytecode [opt]\n")
+		rava.bytecode()
 		msg.line()
 	end
 
@@ -111,7 +132,7 @@ opt.add("generate=name", "Generate a lua file to bytecode object", function(name
 		name = file:gsub("%..-$", ""):gsub("/",".")
 	end
 
-	rava.generate("-n", name, file, ...)
+	rava.bytecode("-n", name, file, ...)
 	os.exit(0)
 end)
 
