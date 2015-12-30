@@ -50,13 +50,23 @@ msg.info = function(...)
 	msg.color(32, "info", ...)
 end
 
+msg.contents = function(tbl)
+	msg.line()
+
+	for k, v in pairs(tbl) do
+		msg.indent(tostring(k).."\t"..tostring(v))
+	end
+
+	msg.line()
+end
+
 msg.dump = function(...)
 	local arg = {...}
 
 	msg.line()
 
 	for i=1, #arg do
-		msg.indent(arg[i])
+		msg.indent(tostring(arg[i]))
 	end
 
 	msg.line()
