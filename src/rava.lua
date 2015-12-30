@@ -109,7 +109,7 @@ local function generateCodeObject(file)
 end
 
 -- list files in a directory
-function rava.scandir(dir)
+rava.scandir = function(dir)
 	local r = {}
 	for file in io.popen("ls -a '"..dir.."'"):lines() do
 		table.insert(r, file)
@@ -119,17 +119,17 @@ function rava.scandir(dir)
 end
 
 -- Add PreHooks to filter input
-function rava.addPreHook(fn)
+rava.addPreHook = function(fn)
 	return addHook(preHooks, fn)
 end
 
 -- Add PostHooks to futher process output
-function rava.addPostHook(fn)
+rava.addPostHook = function(fn)
 	return addHook(postHooks, fn)
 end
 
 -- Add files to the rava compiler
-function rava.addFile(...)
+rava.addFile = function(...)
 	local arg = {...}
 
 	for i=1, #arg do
@@ -161,7 +161,7 @@ function rava.addFile(...)
 end
 
 -- Add a string to the rava compiler
-function rava.addString(name, code)
+rava.addString = function(name, code)
 	name = name:gsub("^%./",""):gsub("^/","")
 
 	rava.code[name] = code
@@ -170,7 +170,7 @@ function rava.addString(name, code)
 end
 
 -- Evaluate code to run in realtime
-function rava.eval(...)
+rava.eval = function(...)
 	local arg = {...}
 	local chunk = ""
 
@@ -184,7 +184,7 @@ function rava.eval(...)
 end
 
 -- Execute external files
-function rava.exec(...)
+rava.exec = function(...)
 	local arg = {...}
 
 	for x = 1, #arg do
@@ -193,7 +193,7 @@ function rava.exec(...)
 end
 
 -- Compile the rava object state to binary
-function rava.compile(name, ...)
+rava.compile = function(name, ...)
 	--load Lua Code
 	rava.addFile(...)
 
@@ -231,7 +231,7 @@ end
 rava.generate = bytecode.start
 
 -- Generate binary datastore
-function rava.datastore(name, store, ...)
+rava.datastore = function(name, store, ...)
 	-- open store
 	local out = io.open(store:gsub("%..+$", "")..".lua", "w+")
 	local files = {...}
