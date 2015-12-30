@@ -94,7 +94,7 @@ opt.add("compile=name", "Compile a binary from lua files", function(name, file, 
 end)
 
 -- Generate bytecode object
-opt.add("generate=name", "Generate a lua file to bytecode object", function(name, ...)
+opt.add("generate=name", "Generate a lua file to bytecode object", function(name, file, ...)
 	local arg = {...}
 
 	if #arg < 2 then
@@ -102,7 +102,13 @@ opt.add("generate=name", "Generate a lua file to bytecode object", function(name
 		msg.line("\tUsage: "..RAVABIN:gsub("^.*/", "").." --generate [opt]\n")
 	end
 
-	rava.generate(name, ...)
+	file = file:gsub("^%./",""):gsub("^/","")
+
+	if name == true then
+		name = file:gsub("%..-$", ""):gsub("/",".")
+	end
+
+	rava.generate("-n", name, file, ...)
 	os.exit(0)
 end)
 

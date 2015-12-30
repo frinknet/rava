@@ -1,4 +1,4 @@
-local bytecode = require("libs/luajit/bcsave").start
+local bytecode = require("libs.luajit.bcsave").start
 local preHooks = {}
 local postHooks = {}
 local ccargs = os.getenv("CCARGS") or ""
@@ -20,13 +20,14 @@ local function fileExists(file)
 	end
 end
 
--- run Hooks
+-- run hooks array
 local function callHooks(hooks, ...)
 	for i=1, #hooks do
 		hooks[i](...)
 	end
 end
 
+-- add hook to hooks array
 local function addHook(hooks, fn)
 	for i = 1, #hooks do
 		if hooks[i] == fn then
@@ -40,12 +41,10 @@ local function addHook(hooks, fn)
 end
 
 -- call through pipe to generate
-local function generateCodeObject(path, name)
-	local dir, file, ext= string.match(path, "(.-)([^/]-([^%.]+))$")
-	local objpath = path
+local function generateCodeObject(file)
+	local objfile = file
 	local leavesym = ""
-
-	name = name or (dir:gsub("^%./",""):gsub("^/",""):gsub("/","/") .. file:gsub("%.lua$",""))
+	local name = file:gsub("%..-$", ""):gsub("/",".")
 
 	-- First file we add is always main
 	if mainobj == nil then
@@ -54,13 +53,13 @@ local function generateCodeObject(path, name)
 	end
 
 	-- Run preprocessors on file
-	callHooks(preHooks, path)
+	callHooks(preHooks, file)
 
 	-- generate lua object
-	if path:match("%.lua$") then
+	if file:match("%.lua$") then
 		if (not opt.flag("n")) then
 			-- load code to check it for errors
-			local fn, err = loadstring(rava.code[path])
+			local fn, err = loadstring(rava.code[file])
 
 			-- die on syntax errors
 			if not fn then
@@ -73,9 +72,9 @@ local function generateCodeObject(path, name)
 			leavesym = "-g"
 		end
 
-		objpath = path..".o"
+		objfile = file..".o"
 
-		msg.info("'"..name.."' = "..path)
+		msg.info("'"..name.."' = "..file)
 
 		-- create CC line
 		local f = io.popen(string.format(
@@ -84,26 +83,29 @@ local function generateCodeObject(path, name)
 			leavesym,
 			name,
 			"-",
-			objpath),"w")
+			objfile),"w")
 
 		-- write code to generator
-		f:write(rava.code[path])
+		f:write(rava.code[file])
 		f:close()
 
+		msg.done()
+	else
+		msg.info("Adding object "..file)
 		msg.done()
 	end
 
 	-- add object
 	if name == "main" then
-		mainobj = objpath
+		mainobj = objfile
 	else
-		table.insert(objs, objpath)
+		table.insert(objs, objfile)
 	end
 
 	--reclame memory (probably overkill in most cases)
-	rava.code[path] = true
+	rava.code[file] = true
 
-	return objpath
+	return objfile
 end
 
 -- list files in a directory
@@ -131,15 +133,13 @@ function rava.addFile(...)
 	local arg = {...}
 
 	for i=1, #arg do
-		local file = arg[i]
+		-- normalize filename
+		local file = arg[i]:gsub("^%./",""):gsub("^/","")
 
 		if rava.code[file] then
 			break
 		elseif not fileExists(file) then
 			msg.warning("Failed to add module: "..file)
-
-			if #file > 10 then
-			end
 
 			break
 		elseif file:match("%.lua$") then
@@ -162,9 +162,11 @@ end
 
 -- Add a string to the rava compiler
 function rava.addString(name, code)
+	name = name:gsub("^%./",""):gsub("^/","")
+
 	rava.code[name] = code
 
-	generateCodeObject(name, name)
+	generateCodeObject(name)
 end
 
 -- Evaluate code to run in realtime
@@ -226,20 +228,8 @@ function rava.compile(name, ...)
 end
 
 -- Generate an object file from lua files
-function rava.generate(name, ...)
-	local arg = {...}
-	local calls = {}
-
-	if name ~= true then
-		table.insert(calls, "-n")
-		table.insert(calls, name)
-	end
-
-	for i = 1, #arg do
-		table.insert(calls, arg[i])
-	end
-
-	bytecode(unpack(calls))
+function rava.generate(...)
+	bytecode(...)
 end
 
 -- Generate binary datastore
@@ -252,16 +242,15 @@ function rava.datastore(name, store, ...)
 	out:write("local "..name.." = {}\n")
 
 	-- loop through files
-	for _, path in pairs(files) do
-		local dir, file, ext= string.match(path, "(.-)([^/]-([^%.]+))$")
-		local ins = io.open(path, "r")
+	for _, file in pairs(files) do
+		local ins = io.open(file, "r")
 
 		if not ins then
-			msg.fatal("Error reading " .. path)
+			msg.fatal("Error reading " .. file)
 		end
 
 		-- add file entry to table
-		out:write(name..'["'..dir:gsub("^%./", ""):gsub("^/", "")..file..'"] = "')
+		out:write(name..'["'..file..'"] = "')
 
 
 		-- write all data to store in memory safe way
