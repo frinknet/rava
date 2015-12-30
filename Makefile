@@ -21,27 +21,27 @@ RAVA=libs/luajit rava.lua
 default all $(INSTALL_DEP): $(RAVA) libs/ravastore.o
 	$(MAKE) git
 	@echo "==== Building Rava $(VERSION) ===="
-	$(RAVA) -csmr --compile=rava src/main.lua
+	$(RAVA) -csmr --compile=rava src/main.lua modules/*.lua
 	@echo "==== Successfully built Rava $(VERSION) ===="
 
 rava.lua rava.lua.o src/init.lua.o: $(LUA_LIBS)
 		@echo "==== Building Rava Init $(VERSION) ===="
 	echo 'require("src.main")' > rava.lua
+	echo 'rava.exec(...)' > ravarun.lua
 	$(RAVA) --generate=init src/init.lua src/init.lua.o
-	$(RAVA) --generate=main rava.lua rava.lua.o
 	@echo "==== Successfully Rava Init $(VERSION) ===="
 
-: $(RAVA) libs/rava.a
+libs/ravastore.o libs/ravastore.lua: $(RAVA) libs/rava.a
 	@echo "==== Generating Rava Store $(VERSION) to $(PREFIX) ===="
+	$(RAVA) --store=ravastore libs/ravastore.o libs/rava.a
 	@echo "==== Successfully generated Rava Store $(VERSION) to $(PREFIX) ===="
 
-ravatest libs/rava.a src/rava.o libs/ravastore.o libs/ravastore.lua: src/rava.c src/init.lua.o $(LUA_LIBS) $(RAVA)
-	@echo "==== Generating Quick Rava $(VERSION) to $(PREFIX) ===="
+ravarun libs/rava.a src/rava.o : src/rava.c src/init.lua.o $(LUA_LIBS) $(RAVA)
+	@echo "==== Generating Rava Test $(VERSION) to $(PREFIX) ===="
 	$(CC) -c src/rava.c -Ilibs/ -o src/rava.o
 	$(LD) -r src/rava.o src/init.lua.o libs/libluajit.a -o libs/rava.a
-	$(RAVA) --store=ravastore libs/ravastore.o libs/rava.a
-	$(RAVA) --compile=ravatest rava.lua
-	@echo "==== Successfully generated Quick Rava $(VERSION) to $(PREFIX) ===="
+	$(RAVA) --compile=ravatest ravarun.lua
+	@echo "==== Successfully generated Rava Test $(VERSION) to $(PREFIX) ===="
 
 install: $(INSTALL_DEP)
 	@echo "==== Installing Rava $(VERSION) to $(PREFIX) ===="
