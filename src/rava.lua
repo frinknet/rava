@@ -75,7 +75,7 @@ local function generateCodeObject(path, name)
 
 		objpath = path..".o"
 
-		msg.info("Chunk '"..name.."' in "..objpath)
+		msg.info("'"..name.."' = "..path)
 
 		-- create CC line
 		local f = io.popen(string.format(
@@ -190,58 +190,14 @@ function rava.exec(...)
 	end
 end
 
--- Generate binary data store
-function rava.store(variable, store, ...)
-	-- open store
-	local out = io.open(store:gsub("%..+$", "")..".lua", "w+")
-	local files = {...}
-
-	-- make sure variable is set
-	variable = variable or "files"
-
-	-- start variable
-	out:write("local "..variable.." = {}\n")
-
-	-- loop through files
-	for _, path in pairs(files) do
-		local dir, file, ext= string.match(path, "(.-)([^/]-([^%.]+))$")
-		local ins = io.open(path, "r")
-		local data = ins:read("*all")
-
-		if not ins then
-			msg.fatal("Error reading " .. path)
-		end
-
-		ins:close()
-		out:write(variable..'["'..dir:gsub("^%./", ""):gsub("^/", "")..file..'"] = "')
-
-		for i = 1, #data do
-			out:write(string.format("\\%i", string.byte(data, i)))
-		end
-
-		out:write('"\n')
-	end
-
-	out:write('\nmodule(...)\n')
-	out:write('return '..variable)
-	out:close()
-
-	bytecode(store:gsub("%..+$", "")..".lua", store:gsub("%..+$", "")..".o")
-end
-
 -- Compile the rava object state to binary
-function rava.compile(binary, ...)
-	-- make sure we have a name
-	if binary == true then
-		binary = "rava"
-	end
-
+function rava.compile(name, ...)
 	--load Lua Code
 	rava.addFile(...)
 
 	msg.info("Compiling Binary... ")
 
-	local f, err = io.open(binary..".a", "w+")
+	local f, err = io.open(name..".a", "w+")
 	local files = require("libs"..".ravastore")
 
 	f:write(files["libs/rava.a"])
@@ -255,19 +211,18 @@ function rava.compile(binary, ...)
 		-o %s -lm -ldl -flto ]],
 		os.getenv("CC") or "gcc",
 		OPLEVEL,
-		binary..".a",
+		name..".a",
 		mainobj,
 		ccargs.." "..table.concat(objs, " "),
-		binary)
+		name)
 
 	-- Call compiler
-	msg.line(ccall)
 	os.execute(ccall)
 
-	-- run PostHooks
-	callHooks(postHooks, binary)
-
 	msg.done()
+
+	-- run PostHooks
+	callHooks(postHooks, name)
 end
 
 -- Generate an object file from lua files
@@ -285,6 +240,48 @@ function rava.generate(name, ...)
 	end
 
 	bytecode(unpack(calls))
+end
+
+-- Generate binary datastore
+function rava.datastore(name, store, ...)
+	-- open store
+	local out = io.open(store:gsub("%..+$", "")..".lua", "w+")
+	local files = {...}
+
+	-- start name
+	out:write("local "..name.." = {}\n")
+
+	-- loop through files
+	for _, path in pairs(files) do
+		local dir, file, ext= string.match(path, "(.-)([^/]-([^%.]+))$")
+		local ins = io.open(path, "r")
+
+		if not ins then
+			msg.fatal("Error reading " .. path)
+		end
+
+		-- add file entry to table
+		out:write(name..'["'..dir:gsub("^%./", ""):gsub("^/", "")..file..'"] = "')
+
+
+		-- write all data to store in memory safe way
+		repeat
+			local char = ins:read(1)
+
+			if char ~= nil then
+				out:write(string.format("\\%i", char:byte()))
+			end
+		until char == nil
+
+		ins:close()
+		out:write('"\n')
+	end
+
+	out:write('\nmodule(...)\n')
+	out:write('return '..name)
+	out:close()
+
+	bytecode(store:gsub("%..+$", "")..".lua", store:gsub("%..+$", "")..".o")
 end
 
 -- code repository
