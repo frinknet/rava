@@ -8,8 +8,8 @@ LUA_LIBS=libs/luajit/luajit libs/luajit/lua.h libs/luajit/lualib.h \
 libs/luajit/luaconf.h libs/luajit/lauxlib.h libs/luajit/libluajit.a \
 libs/luajit/bcsave.lua
 
-LUV_DEPS=deps/luv/.libs/libluv.a deps/luv/include/*
-LUV_LIBS=libs/luv/libluv.a
+LUV_DEPS=deps/libluv/build/libluv.a
+LUV_LIBS=libs/libluv/libluv.a
 
 RAVA_SRC=src/rava.c src/rava.lua src/msg.lua src/opt.lua src/init.lua
 RAVA_LIBS=libs/rava.a
@@ -68,8 +68,8 @@ clean-luajit:
 	cd deps/luajit/ && git clean -dfx
 
 clean-libluv:
-	$(MAKE) clean -C deps/luv/
-	cd deps/luv/ && git clean -dfx
+	$(MAKE) clean -C deps/libluv/
+	cd deps/libluv/ && git clean -dfx
 
 deps: deps-luajit deps-libluv deps-rava
 
@@ -83,7 +83,7 @@ $(RAVA_LIBS): $(LUA_LIBS) $(LUV_LIBS)
 	$(RAVA) --bytecode=init src/init.lua src/init.lua.o
 	$(RAVA) --build=rava src/rava.o src/init.lua.o src/rava.lua \
 		src/opt.lua src/msg.lua libs/luajit/bcsave.lua \
-		libs/luajit/libluajit.a libs/luv/libluv.a
+		libs/luajit/libluajit.a libs/libluv/libluv.a
 	$(RAVA) --datastore=ravastore libs/ravastore.o rava.a
 	@echo "==== Generated Rava Core ===="
 
@@ -93,11 +93,11 @@ $(LUA_LIBS): $(LUA_DEPS)
 	sed -i'.bak' -e's/^Save.\+//' -e's/^  /\t/g' -e's/^File /\t/' -e's/\.$$//' libs/luajit/bcsave.lua
 
 $(LUV_LIBS): $(LUV_DEPS)
-	mkdir -p libs/luv/
-	cp $+ libs/luv/
+	mkdir -p libs/libluv/
+	cp $+ libs/libluv/
 
 $(LUA_DEPS):
 	$(MAKE) -C deps/luajit/
 
 $(LUV_DEPS):
-	BUILD_MODULE=OFF $(MAKE) -C deps/luv/
+	BUILD_MODULE=OFF $(MAKE) -C deps/libluv/
