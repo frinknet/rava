@@ -8,8 +8,8 @@ LUA_LIBS=libs/luajit/luajit libs/luajit/lua.h libs/luajit/lualib.h \
 libs/luajit/luaconf.h libs/luajit/lauxlib.h libs/luajit/libluajit.a \
 libs/luajit/bcsave.lua
 
-LIBUV_DEPS=deps/libuv/.libs/libuv.a deps/libuv/include/*
-LIBUV_LIBS=libs/libuv/libuv.a
+LUV_DEPS=deps/luv/.libs/libluv.a deps/luv/include/*
+LUV_LIBS=libs/luv/libluv.a
 
 RAVA_SRC=src/rava.c src/rava.lua src/msg.lua src/opt.lua src/init.lua
 RAVA_LIBS=libs/rava.a
@@ -61,29 +61,29 @@ uninstall:
 clean:
 	rm -rf libs/* src/*.o modules/*.o rava*
 
-clean-all: clean clean-luajit clean-libuv
+clean-all: clean clean-luajit clean-libluv
 
 clean-luajit:
 	$(MAKE) clean -C deps/luajit/
 	cd deps/luajit/ && git clean -dfx
 
-clean-libuv:
-	$(MAKE) clean -C deps/libuv/
-	cd deps/libuv/ && git clean -dfx
+clean-libluv:
+	$(MAKE) clean -C deps/luv/
+	cd deps/luv/ && git clean -dfx
 
-deps: deps-luajit deps-libuv deps-rava
+deps: deps-luajit deps-libluv deps-rava
 
 deps-luajit: $(LUA_LIBS)
-deps-libuv: $(LIBUV_LIBS)
+deps-libluv: $(LUV_LIBS)
 deps-rava: $(RAVA_LIBS)
 
-$(RAVA_LIBS): $(LUA_LIBS) $(LIBUV_LIBS)
+$(RAVA_LIBS): $(LUA_LIBS) $(LUV_LIBS)
 	@echo "==== Generating Rava Core ===="
 	$(CC) -c src/rava.c $(CCARGS) -o src/rava.o
 	$(RAVA) --bytecode=init src/init.lua src/init.lua.o
 	$(RAVA) --build=rava src/rava.o src/init.lua.o src/rava.lua \
 		src/opt.lua src/msg.lua libs/luajit/bcsave.lua \
-		libs/luajit/libluajit.a libs/libuv/libuv.a
+		libs/luajit/libluajit.a libs/luv/libluv.a
 	$(RAVA) --datastore=ravastore libs/ravastore.o rava.a
 	@echo "==== Generated Rava Core ===="
 
@@ -92,15 +92,12 @@ $(LUA_LIBS): $(LUA_DEPS)
 	cp $+ libs/luajit/
 	sed -i'.bak' -e's/^Save.\+//' -e's/^  /\t/g' -e's/^File /\t/' -e's/\.$$//' libs/luajit/bcsave.lua
 
-$(LIBUV_LIBS): $(LIBUV_DEPS)
-	mkdir -p libs/libuv/
-	cp $+ libs/libuv/
+$(LUV_LIBS): $(LUV_DEPS)
+	mkdir -p libs/luv/
+	cp $+ libs/luv/
 
 $(LUA_DEPS):
 	$(MAKE) -C deps/luajit/
 
-$(LIBUV_DEPS):
-	cd deps/libuv && sh autogen.sh
-	cd deps/libuv && sh autogen.sh
-	cd deps/libuv && sh configure
-	$(MAKE) check -C deps/libuv/
+$(LUV_DEPS):
+	BUILD_MODULE=OFF $(MAKE) -C deps/luv/
