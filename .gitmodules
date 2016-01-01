@@ -4,6 +4,3 @@
 [submodule "deps/libuv"]
 	path = deps/libuv
 	url = https://github.com/libuv/libuv.git
-[submodule "deps/ljuv"]
-	path = deps/ljuv
-	url = https://github.com/pguillory/luajit-libuv
