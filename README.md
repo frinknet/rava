@@ -12,3 +12,9 @@ Dependencies:
 
 # License:
 MIT
+
+DOSA
+
+DOSA
+
+Deployable Operating System Aplications

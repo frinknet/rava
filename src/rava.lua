@@ -236,7 +236,7 @@ rava.compile = function(name, ...)
 	%s -O%s -Wall -Wl,-E \
 		-x none %s -x none %s \
 		%s \
-		-o %s -lm -ldl -flto ]],
+		-o %s -lm -ldl -flto -lpthread ]],
 		os.getenv("CC") or "gcc",
 		OPLEVEL,
 		name..".a",

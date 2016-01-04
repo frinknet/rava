@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <pthread.h>
+#include "luv.h"
 #include "lua.h"
 #include "lualib.h"
 #include "lauxlib.h"
@@ -22,6 +24,14 @@ int main(int argc, char *argv[]) {
 	}
 
 	lua_setglobal(L, "arg");
+
+	lua_getglobal(L, "package");
+	lua_getfield(L, -1, "preload");
+	lua_remove(L, -2); // Remove package
+	
+	// Store uv module definition at preload.uv
+	lua_pushcfunction(L, luaopen_luv);
+	lua_setfield(L, -2, "uv");
 
 	int r = luaL_dostring(L, "require \"init\"");
 

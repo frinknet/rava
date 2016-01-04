@@ -8,8 +8,9 @@ LUA_LIBS=libs/luajit/luajit libs/luajit/lua.h libs/luajit/lualib.h \
 libs/luajit/luaconf.h libs/luajit/lauxlib.h libs/luajit/libluajit.a \
 libs/luajit/bcsave.lua
 
-LUV_DEPS=deps/libluv/build/libluv.a
-LUV_LIBS=libs/libluv/libluv.a
+LUV_DEPS=deps/libluv/build/*.a deps/libluv/src/*.h \
+deps/libluv/deps/libuv/include/*.h
+LUV_LIBS=libs/libluv/libluv.a libs/libluv/libuv.a libs/libluv/luv.h libs/libluv/uv.h
 
 RAVA_SRC=src/rava.c src/rava.lua src/msg.lua src/opt.lua src/init.lua
 RAVA_LIBS=libs/rava.a
@@ -18,7 +19,7 @@ DPREFIX=$(DESTDIR)$(PREFIX)
 INSTALL_BIN=$(DPREFIX)/bin
 INSTALL_DEP=rava
 
-CCARGS=-Ilibs/luajit/
+CCARGS=-Ilibs/luajit/ -Ilibs/libluv/ -lpthread
 
 CC=gcc
 LD=ld
@@ -83,7 +84,7 @@ $(RAVA_LIBS): $(LUA_LIBS) $(LUV_LIBS)
 	$(RAVA) --bytecode=init src/init.lua src/init.lua.o
 	$(RAVA) --build=rava src/rava.o src/init.lua.o src/rava.lua \
 		src/opt.lua src/msg.lua libs/luajit/bcsave.lua \
-		libs/luajit/libluajit.a libs/libluv/libluv.a
+		libs/libluv/libluv.a libs/libluv/libuv.a libs/luajit/libluajit.a
 	$(RAVA) --datastore=ravastore libs/ravastore.o rava.a
 	@echo "==== Generated Rava Core ===="
 
