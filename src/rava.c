@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <pthread.h>
 #include "luv.h"
+#include "xuv.h"
 #include "lua.h"
 #include "lualib.h"
 #include "lauxlib.h"
@@ -31,7 +32,11 @@ int main(int argc, char *argv[]) {
 	
 	// Store uv module definition at preload.uv
 	lua_pushcfunction(L, luaopen_luv);
-	lua_setfield(L, -2, "uv");
+	lua_setfield(L, -2, "luv");
+
+	// Store uv module definition at preload.uv
+	lua_pushcfunction(L, luaopen_xuv);
+	lua_setfield(L, -2, "xuv");
 
 	int r = luaL_dostring(L, "require \"init\"");
 
