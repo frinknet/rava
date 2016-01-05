@@ -89,7 +89,7 @@ opt.add("build=name", "Build a lua library from files", function(name, file, ...
 
 	msg.format("%s v%s - %s\n\nBuilding %s.a library from: ",
 		APPNAME, VERSION, jit.version, name)
-	msg.dump(file, ...)
+	msg.list(file, ...)
 	rava.build(name, file, ...)
 	msg.line()
 
@@ -108,7 +108,7 @@ opt.add("compile=name", "Compile a binary from lua files", function(name, file, 
 
 	msg.format("%s v%s - %s\n\nCompiling %s from file: ",
 		APPNAME, VERSION, jit.version, name)
-	msg.dump(...)
+	msg.list(...)
 	rava.compile(name, file, ...)
 	msg.line()
 

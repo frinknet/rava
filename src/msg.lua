@@ -50,27 +50,60 @@ msg.info = function(...)
 	msg.color(32, "info", ...)
 end
 
-msg.contents = function(tbl)
-	msg.line()
+msg.list = function(...)
+	local lst = function(lst, tbl, val)
+		if type(tbl) == "table" then
+			msg.line()
+			for k, v in pairs(tbl) do
+				lst(lst, k, v)
+			end
+		else
+			local k = tostring(tbl)
+			local v = tostring(val)
 
-	for k, v in pairs(tbl) do
-		msg.indent(tostring(k).."\t"..tostring(v))
+			if k ~= "" and v ~= "" then
+				k = k..": "
+			end
+
+			msg.format("\t%s%s\n", k, v)
+		end
 	end
 
 	msg.line()
+	lst(lst, {...})
 end
 
 msg.dump = function(...)
-	local arg = {...}
+	local objs = {...}
+	local dmp = function(dmp, obj, name, ind)
+		local tp = type(obj)
+		local ind = ind or ""
+		local name = name or ""
+		local val = "["..tp.."]"
 
-	msg.line()
+		if tp == "string" then
+			val = obj
+		end
 
-	for i=1, #arg do
-		msg.indent(tostring(arg[i]))
+		msg.format("%s%s: %s\n", ind, name, val)
+
+		if tp == "table" then
+			if #name then
+				name = name.."."
+			end
+
+			for k, v in pairs(obj) do
+				dmp(dmp, v, k, ind.."\t")
+			end
+		end
 	end
 
-	msg.line()
+	for i = 1, #objs do
+		msg.line()
+		dmp(dmp, objs[i], "arg"..i)
+	end
 end
+
 
 module(...)
 

@@ -49,10 +49,9 @@ debug: deps-rava
 	@echo "==== Generated Rava Debug ===="
 	$(MAKE) $(INSTALL_DEP)
 
-install:
-	@echo "==== Installing Rava $(VERSION) to $(PREFIX) ===="
-	cp $(INSTALL_DEP) $(INSTALL_BIN)
-	@echo "==== Installed Rava $(VERSION) to $(PREFIX) ===="
+install: rava
+	@sudo cp $(INSTALL_DEP) $(INSTALL_BIN)
+	@echo "==== Installed Rava $(VERSION) to $(INSTALL_BIN) ===="
 
 uninstall:
 	@echo "==== Uninstalling Rava $(VERSION) from $(PREFIX) ===="
