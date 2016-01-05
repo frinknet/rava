@@ -74,23 +74,37 @@ msg.list = function(...)
 end
 
 msg.dump = function(...)
-	local objs = {...}
+	local ins = {...}
+	local objs = {}
 	local dmp = function(dmp, obj, name, ind)
 		local tp = type(obj)
 		local ind = ind or ""
 		local name = name or ""
 		local val = "["..tp.."]"
 
-		if tp == "string" then
+		if tp == "string" or tp == "number" then
 			val = obj
+		end
+
+		if type(name) == "number" then
+			name = "["..name.."]"
 		end
 
 		msg.format("%s%s: %s\n", ind, name, val)
 
+		if tp == "userdata" then
+			obj = getmetatable(obj)
+			tp = type(obj)
+		end
+
 		if tp == "table" then
-			if #name then
-				name = name.."."
+			for i = 1, #objs do
+				if obj == objs[i] then
+					return
+				end
 			end
+
+			table.insert(objs, obj)
 
 			for k, v in pairs(obj) do
 				dmp(dmp, v, k, ind.."\t")
@@ -98,12 +112,11 @@ msg.dump = function(...)
 		end
 	end
 
-	for i = 1, #objs do
+	for i = 1, #ins do
 		msg.line()
-		dmp(dmp, objs[i], "arg"..i)
+		dmp(dmp, ins[i], "dump["..i.."]")
 	end
 end
-
 
 module(...)
 
