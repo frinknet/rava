@@ -81,8 +81,7 @@ deps-rava: $(RAVA_LIBS)
 $(RAVA_LIBS): $(LUA_LIBS) $(LUV_LIBS)
 	@echo "==== Generating Rava Core ===="
 	$(CC) -c src/rava.c $(CCARGS) -o src/rava.o
-	$(RAVA) --bytecode=init src/init.lua src/init.lua.o
-	$(RAVA) --build=rava src/rava.o src/init.lua.o src/rava.lua \
+	$(RAVA) --build=rava src/rava.o src/init.lua src/rava.lua \
 		src/opt.lua src/msg.lua libs/luajit/bcsave.lua \
 		libs/libluv/libluv.a libs/libluv/libuv.a libs/luajit/libluajit.a
 	$(RAVA) --datastore=ravastore libs/ravastore.o rava.a
