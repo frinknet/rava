@@ -256,8 +256,8 @@ end
 -- Generate an object file from lua files
 gen.bytecode = bytecode.start
 
--- Generate binary datastore
-gen.datastore = function(name, store, ...)
+-- Generate binary filestore
+gen.filestore = function(name, store, ...)
 	-- open store
 	local out = io.open(store:gsub("%..+$", "")..".lua", "w+")
 	local files = {...}

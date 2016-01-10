@@ -84,7 +84,7 @@ $(RAVA_LIBS) $(RAVA_LUA): $(LUA_LIBS) $(UV_LIBS)
 	cd lua && ./rava.sh --build=rava ../src/rava.o ../src/xuv.o \
 		init.lua.o gen.lua opt.lua msg.lua bytecode.lua \
 		../libs/libuv/libuv.a ../libs/luajit/libluajit.a
-	cd lua && ./rava.sh --datastore=ravastore libs/ravastore.o rava.a
+	cd lua && ./rava.sh --filestore=ravastore ../libs/ravastore.o rava.a
 	@echo "==== Generated Rava Core ===="
 
 $(LUA_LIBS): $(LUA_DEPS)

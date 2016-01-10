@@ -137,8 +137,8 @@ opt.add("bytecode=name", "Generate a lua file to bytecode object", function(name
 end)
 
 -- Generate binary data store
-opt.add("datastore=name", "Generate a lua data store of binary files", function(name, store, ...)
-	gen.datastore(name, store, ...)
+opt.add("filestore=name", "Generate a lua data store of binary files", function(name, store, ...)
+	gen.filestore(name, store, ...)
 	os.exit(0)
 end)
 
