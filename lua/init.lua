@@ -2,7 +2,7 @@
 rava = require("gen")
 opt  = require("opt")
 msg  = require("msg")
-xuv  = require("xuv")
+rava  = require("rava")
 
 -- start the main file
 require("main")

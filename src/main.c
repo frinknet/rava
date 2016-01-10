@@ -4,6 +4,7 @@
 #include "lualib.h"
 #include "lauxlib.h"
 #include "xuv.h"
+#include "rava.h"
 
 /**
  * Create a lua container from and run the lua code you pass to it
@@ -28,6 +29,10 @@ lua_State* rava_newlua() {
 	// Store uv module definition at preload.uv
 	lua_pushcfunction(L, luaopen_xuv);
 	lua_setfield(L, -2, "xuv");
+
+	// Store uv module definition at preload.uv
+	lua_pushcfunction(L, luaopen_rava);
+	lua_setfield(L, -2, "rava");
 
 	return L;
 }

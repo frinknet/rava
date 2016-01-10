@@ -1,3 +1,8 @@
-FRINKnet & Expatriated Lemurs of Borneo are comprised of:
+The Expatriated Lemurs of Borneo authoring this program include:
 
 Micon Frink <frink@frinknet.com>
+General maintainer and code guru of this project
+
+Zyxwvu Shi <imzyxwvu@gmail.com>
+Created lua-xuv from which the rava object model was based. See original repo at:
+https://github.com/imzyxwvu/lua-xuv
