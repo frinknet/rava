@@ -58,7 +58,7 @@ uninstall:
 	@echo "==== Uninstalled LuaJIT $(VERSION) from $(PREFIX) ===="
 
 clean: clean-rava
-	rm -rf libs/* rava*
+	rm -rf libs/ rava*
 
 clean-all: clean clean-luajit clean-libuv clean-rava
 
@@ -78,8 +78,8 @@ deps: deps-git deps-luajit deps-libuv deps-rava
 deps-git:
 	git submodule update --init
 
-deps-luajit: $(LUA_LIBS)
-deps-libuv: $(UV_LIBS)
+deps-luajit: deps-git $(LUA_LIBS)
+deps-libuv: deps-git $(UV_LIBS)
 deps-rava: $(RAVA_LIBS) $(RAVA_LUA)
 
 $(RAVA_LIBS) $(RAVA_LUA): $(LUA_LIBS) $(UV_LIBS)
