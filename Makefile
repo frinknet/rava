@@ -83,9 +83,8 @@ $(RAVA_LIBS) $(RAVA_LUA): $(LUA_LIBS) $(UV_LIBS)
 	@echo "==== Generating Rava Core ===="
 	$(CC) -c src/main.c $(CCARGS) -o src/main.o
 	$(CC) -c src/rava.c $(CCARGS) -o src/rava.o
-	$(CC) -c src/xuv.c $(CCARGS) -o src/xuv.o
 	cd lua && ./rava.sh --bytecode=init init.lua init.lua.o
-	cd lua && ./rava.sh --build=rava ../src/main.o ../src/rava.o ../src/xuv.o \
+	cd lua && ./rava.sh --build=rava ../src/main.o ../src/rava.o \
 		init.lua.o gen.lua opt.lua msg.lua gen/bcsave.lua \
 		../libs/libuv/libuv.a ../libs/luajit/libluajit.a
 	cd lua && ./rava.sh --filestore=ravastore ../libs/ravastore.o rava.a

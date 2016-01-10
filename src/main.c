@@ -3,7 +3,6 @@
 #include "lua.h"
 #include "lualib.h"
 #include "lauxlib.h"
-#include "xuv.h"
 #include "rava.h"
 
 /**
@@ -26,11 +25,7 @@ lua_State* rava_newlua() {
 	lua_getfield(L, -1, "preload");
 	lua_remove(L, -2); // Remove package
 	
-	// Store uv module definition at preload.uv
-	lua_pushcfunction(L, luaopen_xuv);
-	lua_setfield(L, -2, "xuv");
-
-	// Store uv module definition at preload.uv
+	// Store rava module definition at preload.rava
 	lua_pushcfunction(L, luaopen_rava);
 	lua_setfield(L, -2, "rava");
 
