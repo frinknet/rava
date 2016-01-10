@@ -1,13 +1,13 @@
 -- Macros. Run at compile time.
 opt.add("r", "Recursively include files", function()
-	rava.addPreHook(function(file)
+	gen.addPreHook(function(file)
 		-- load code to parse
-		local code = rava.code[file]
+		local code = gen.code[file]
 		local findreq = function(chunk, m)
 			chunk:gsub(m, function(line, file)
 				file = file:gsub("[.]", "/")..".lua"
 
-				rava.addFile(file)
+				gen.addFile(file)
 		
 				return line
 			end)

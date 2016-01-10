@@ -1,10 +1,10 @@
 -- Macros. Run at compile time.
 opt.add("m", "Process <[[=macros]]> in source before compiling", function()
-	rava.addPreHook(function(file)
-		local code = rava.code[file]
+	gen.addPreHook(function(file)
+		local code = gen.code[file]
 		local printed = false
 
-		rava.code[file] = code:gsub("%<%[%[(.-)%]%]%>", function(chunk)
+		gen.code[file] = code:gsub("%<%[%[(.-)%]%]%>", function(chunk)
 			if chunk and file then
 				if not printed then
 					msg.info("Macros in " .. file)

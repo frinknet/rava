@@ -1,4 +1,4 @@
-local bytecode = require("bytecode")
+local bytecode = require("gen.bcsave")
 local preHooks = {}
 local postHooks = {}
 local ccargs = os.getenv("CCARGS") or ""
@@ -226,7 +226,7 @@ gen.compile = function(name, ...)
 	msg.info("Compiling Binary... ")
 
 	local f, err = io.open(name..".a", "w+")
-	local files = require("libs"..".ravastore")
+	local files = require("gen"..".ravastore")
 
 	f:write(files["rava.a"])
 	f:close()
@@ -258,7 +258,8 @@ gen.bytecode = bytecode.start
 
 -- Generate binary filestore
 gen.filestore = function(name, store, ...)
-	store = store:gsub("%..[^%.]+$", "")
+	store = store:gsub("%.[^%.]+$", "")
+
 	-- open store
 	local out = io.open(store..".lua", "w+")
 	local files = {...}
