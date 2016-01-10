@@ -1,4 +1,4 @@
-local msg = require("src.msg")
+local msg = require("msg")
 
 local opt_act = {}
 local opt_def = {}

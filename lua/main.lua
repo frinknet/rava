@@ -1,7 +1,7 @@
 -- Load libs
-msg = require("src.msg")
-opt = require("src.opt")
-rava = require("src.rava")
+msg = require("msg")
+opt = require("opt")
+gen = require("gen")
 
 -- set version
 APPNAME = "Rava Micro-Service Compiler"
@@ -53,7 +53,7 @@ opt.add("n", "Don't check the source file for syntax errors")
 -- Debug symbols
 opt.add("g", "Leave debug sybols intact in lua object files")
 
-local modules = rava.scandir("modules")
+local modules = gen.scandir("modules")
 
 for _,mod in pairs(modules) do
 	local mod, match = mod:gsub(".lua$", "")
@@ -64,13 +64,13 @@ end
 
 -- Run lua from commandline
 opt.add("eval", "Evaluates a string lua code", function(flag, ...)
-	rava.eval(...)
+	gen.eval(...)
 	os.exit(0)
 end)
 
 -- Run files instead of compiling
 opt.add("exec", "Executes files in rava runtime environment", function(flag, ...)
-	rava.exec(...)
+	gen.exec(...)
 
 	os.exit(0)
 end)
@@ -90,7 +90,7 @@ opt.add("build=name", "Build a lua library from files", function(name, file, ...
 	msg.format("%s v%s - %s\n\nBuilding %s.a library from: ",
 		APPNAME, VERSION, jit.version, name)
 	msg.list(file, ...)
-	rava.build(name, file, ...)
+	gen.build(name, file, ...)
 	msg.line()
 
 	os.exit(0)
@@ -109,7 +109,7 @@ opt.add("compile=name", "Compile a binary from lua files", function(name, file, 
 	msg.format("%s v%s - %s\n\nCompiling %s from file: ",
 		APPNAME, VERSION, jit.version, name)
 	msg.list(...)
-	rava.compile(name, file, ...)
+	gen.compile(name, file, ...)
 	msg.line()
 
 	os.exit(0)
@@ -122,7 +122,7 @@ opt.add("bytecode=name", "Generate a lua file to bytecode object", function(name
 	if file == nil then
 		msg.format("%s v%s - %s\n", APPNAME, VERSION, jit.version)
 		msg.indent("Usage: "..RAVABIN:gsub("^.*/", "").." --bytecode [opt]\n")
-		rava.bytecode()
+		gen.bytecode()
 		msg.line()
 	end
 
@@ -132,13 +132,13 @@ opt.add("bytecode=name", "Generate a lua file to bytecode object", function(name
 		name = file:gsub("%..-$", ""):gsub("/",".")
 	end
 
-	rava.bytecode("-n", name, file, ...)
+	gen.bytecode("-n", name, file, ...)
 	os.exit(0)
 end)
 
 -- Generate binary data store
 opt.add("datastore=name", "Generate a lua data store of binary files", function(name, store, ...)
-	rava.datastore(name, store, ...)
+	gen.datastore(name, store, ...)
 	os.exit(0)
 end)
 

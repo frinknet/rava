@@ -4,7 +4,7 @@ local postHooks = {}
 local ccargs = os.getenv("CCARGS") or ""
 local mainobj
 local objs = {}
-local rava = {}
+local gen = {}
 
 -- check if file exists
 local function fileExists(file)
@@ -59,7 +59,7 @@ local function generateCodeObject(file)
 	if file:match("%.lua$") then
 		if (not opt.flag("n")) then
 			-- load code to check it for errors
-			local fn, err = loadstring(rava.code[file])
+			local fn, err = loadstring(gen.code[file])
 
 			-- die on syntax errors
 			if not fn then
@@ -86,7 +86,7 @@ local function generateCodeObject(file)
 			objfile),"w")
 
 		-- write code to generator
-		f:write(rava.code[file])
+		f:write(gen.code[file])
 		f:close()
 
 		msg.done()
@@ -103,13 +103,13 @@ local function generateCodeObject(file)
 	end
 
 	--reclame memory (probably overkill in most cases)
-	rava.code[file] = true
+	gen.code[file] = true
 
 	return objfile
 end
 
 -- list files in a directory
-rava.scandir = function(dir)
+gen.scandir = function(dir)
 	local r = {}
 	for file in io.popen("ls -a '"..dir.."' 2>/dev/null"):lines() do
 		table.insert(r, file)
@@ -119,24 +119,24 @@ rava.scandir = function(dir)
 end
 
 -- Add PreHooks to filter input
-rava.addPreHook = function(fn)
+gen.addPreHook = function(fn)
 	return addHook(preHooks, fn)
 end
 
 -- Add PostHooks to futher process output
-rava.addPostHook = function(fn)
+gen.addPostHook = function(fn)
 	return addHook(postHooks, fn)
 end
 
 -- Add files to the rava compiler
-rava.addFile = function(...)
+gen.addFile = function(...)
 	local arg = {...}
 
 	for i=1, #arg do
 		-- normalize filename
 		local file = arg[i]:gsub("^%./",""):gsub("^/","")
 
-		if rava.code[file] then
+		if gen.code[file] then
 			break
 		elseif not fileExists(file) then
 			msg.warning("Failed to add module: "..file)
@@ -149,7 +149,7 @@ rava.addFile = function(...)
 
 			if err then msg.fatal(err) end
 
-			rava.code[file] = f:read("*all")
+			gen.code[file] = f:read("*all")
 
 			f:close()
 
@@ -161,16 +161,16 @@ rava.addFile = function(...)
 end
 
 -- Add a string to the rava compiler
-rava.addString = function(name, code)
+gen.addString = function(name, code)
 	name = name:gsub("^%./",""):gsub("^/","")
 
-	rava.code[name] = code
+	gen.code[name] = code
 
 	generateCodeObject(name)
 end
 
 -- Evaluate code to run in realtime
-rava.eval = function(...)
+gen.eval = function(...)
 	local arg = {...}
 	local chunk = ""
 
@@ -184,7 +184,7 @@ rava.eval = function(...)
 end
 
 -- Execute external files
-rava.exec = function(...)
+gen.exec = function(...)
 	local arg = {...}
 
 	for x = 1, #arg do
@@ -192,12 +192,12 @@ rava.exec = function(...)
 	end
 end
 
-rava.build = function(name, ...)
+gen.build = function(name, ...)
 	mainobj = true
 	name = name..".a"
 
 	--load Lua Code
-	rava.addFile(...)
+	gen.addFile(...)
 
 	msg.info("Building "..name.." library... ")
 
@@ -219,9 +219,9 @@ rava.build = function(name, ...)
 end
 
 -- Compile the rava object state to binary
-rava.compile = function(name, ...)
+gen.compile = function(name, ...)
 	--load Lua Code
-	rava.addFile(...)
+	gen.addFile(...)
 
 	msg.info("Compiling Binary... ")
 
@@ -254,10 +254,10 @@ rava.compile = function(name, ...)
 end
 
 -- Generate an object file from lua files
-rava.bytecode = bytecode.start
+gen.bytecode = bytecode.start
 
 -- Generate binary datastore
-rava.datastore = function(name, store, ...)
+gen.datastore = function(name, store, ...)
 	-- open store
 	local out = io.open(store:gsub("%..+$", "")..".lua", "w+")
 	local files = {...}
@@ -295,12 +295,12 @@ rava.datastore = function(name, store, ...)
 	out:write('return '..name)
 	out:close()
 
-	rava.bytecode(store:gsub("%..+$", "")..".lua", store:gsub("%..+$", "")..".o")
+	gen.bytecode(store:gsub("%..+$", "")..".lua", store:gsub("%..+$", "")..".o")
 end
 
 -- code repository
-rava.code = {}
+gen.code = {}
 
 module(...)
 
-return rava
+return gen

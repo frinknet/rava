@@ -1,8 +1,7 @@
 -- provide instanciated inbuilt libs
-rava = require("src.rava")
-opt  = require("src.opt")
-msg  = require("src.msg")
-luv  = require("luv")
+rava = require("gen")
+opt  = require("opt")
+msg  = require("msg")
 xuv  = require("xuv")
 
 -- start the main file

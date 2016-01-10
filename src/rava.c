@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <pthread.h>
-#include "xuv.h"
 #include "lua.h"
 #include "lualib.h"
 #include "lauxlib.h"
+#include "xuv.h"
 
 /**
  * Create a lua container from and run the lua code you pass to it

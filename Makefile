@@ -8,28 +8,28 @@ LUA_LIBS=libs/luajit/luajit libs/luajit/lua.h libs/luajit/lualib.h \
 libs/luajit/luaconf.h libs/luajit/lauxlib.h libs/luajit/libluajit.a \
 libs/luajit/bcsave.lua
 
-UV_DEPS=deps/libuv/*.a deps/libuv/include/*.h
-UV_LIBS=libs/libuv/libuv.a libs/libluv/uv.h
+UV_DEPS=deps/libuv/.libs/* deps/libuv/include/*.h
+UV_LIBS=libs/libuv/libuv.a libs/libuv/uv.h
 
 RAVA_SRC=src/rava.c
-RAVA_LUA=lua/rava.lua lua/msg.lua lua/opt.lua lua/init.lua
+RAVA_LUA=lua/gen.lua lua/msg.lua lua/opt.lua lua/init.lua
 RAVA_LIBS=libs/rava.a
 
 DPREFIX=$(DESTDIR)$(PREFIX)
 INSTALL_BIN=$(DPREFIX)/bin
 INSTALL_DEP=rava
 
-CCARGS=-Ilibs/luajit/ -Ilibs/libluv/ -lpthread
+CCARGS=-Ilibs/luajit/ -Ilibs/libuv/ -lpthread
 
 CC=gcc
 LD=ld
-RAVA=libs/luajit/luajit lua/main.lua
+RAVA=lua/rava.sh
 
 all: rava
 
 rava: deps-rava
 	@echo "==== Building Rava $(VERSION) ===="
-	$(RAVA) -csn --compile=rava main.lua modules/*.lua
+	$(RAVA) -csn --compile=rava lua/main.lua lua/modules/*.lua
 	@echo "==== Success builting Rava $(VERSION) ===="
 
 debug: deps-rava
@@ -59,9 +59,9 @@ uninstall:
 	@echo "==== Uninstalled LuaJIT $(VERSION) from $(PREFIX) ===="
 
 clean:
-	rm -rf libs/* lua/*.o src/*.o modules/*.o rava*
+	rm -rf libs/* lua/*.o src/*.o lua/modules/*.o rava*
 
-clean-all: clean clean-luajit clean-libluv
+clean-all: clean clean-luajit clean-libuv
 
 clean-luajit:
 	$(MAKE) clean -C deps/luajit/
@@ -71,20 +71,20 @@ clean-libuv:
 	$(MAKE) clean -C deps/libuv/
 	cd deps/libuv/ && git clean -dfx
 
-deps: deps-luajit deps-libluv deps-rava
+deps: deps-luajit deps-libuv deps-rava
 
 deps-luajit: $(LUA_LIBS)
 deps-libuv: $(UV_LIBS)
-deps-rava: $(RAVA_LIBS) $(RAVA_LUA)
+deps-rava: $(RAVA_LIBS) $(RAVA_LUA) $(RAVA)
 
-$(RAVA_LIBS) $(RAVA_LUA): $(LUA_LIBS) $(LUV_LIBS)
+$(RAVA_LIBS) $(RAVA_LUA) $(RAVA): $(LUA_LIBS) $(UV_LIBS)
 	@echo "==== Generating Rava Core ===="
 	$(CC) -c src/rava.c $(CCARGS) -o src/rava.o
 	$(CC) -c src/xuv.c $(CCARGS) -o src/xuv.o
 	$(RAVA) --bytecode=init lua/init.lua lua/init.lua.o
-	$(RAVA) --build=rava src/rava.o src/xuv.o lua/init.lua.o lua/rava.lua \
+	$(RAVA) --build=rava src/rava.o src/xuv.o lua/init.lua.o lua/gen.lua \
 		lua/opt.lua lua/msg.lua libs/luajit/bcsave.lua \
-		libs/libluv/libluv.a libs/libluv/libuv.a libs/luajit/libluajit.a
+		libs/libuv/libuv.a libs/luajit/libluajit.a
 	$(RAVA) --datastore=ravastore libs/ravastore.o rava.a
 	@echo "==== Generated Rava Core ===="
 
