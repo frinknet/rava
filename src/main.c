@@ -4,6 +4,7 @@
 #include "lualib.h"
 #include "lauxlib.h"
 #include "rava.h"
+#include "ray.h"
 
 /**
  * Create a lua container from and run the lua code you pass to it
@@ -28,6 +29,10 @@ lua_State* rava_newlua() {
 	// Store rava module definition at preload.rava
 	lua_pushcfunction(L, luaopen_rava);
 	lua_setfield(L, -2, "rava");
+
+	// Store rava module definition at preload.rava
+	lua_pushcfunction(L, luaopen_ray);
+	lua_setfield(L, -2, "ray");
 
 	return L;
 }
