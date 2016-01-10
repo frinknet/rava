@@ -1,4 +1,4 @@
-local bytecode = require("libs.luajit.bcsave")
+local bytecode = require("bytecode")
 local preHooks = {}
 local postHooks = {}
 local ccargs = os.getenv("CCARGS") or ""

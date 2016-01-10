@@ -1,0 +1,22 @@
+we need to be able to crate seprate luastates with their own threads
+
+also loading modules should be allowed as follows:
+
+
+thread.lua(1024, function()
+
+	return something
+end, "mod1", "mod2")
+
+
+spawn(memory, chroot, callback, modules ...)
+
+spawn(funct, chroot, memory)
+
+
+
+if module "any" is given then they can do a subprocess
+and allow the loading of any module otherwise only the modules that they have been
+delegated will be allowed if they spawn a thread
+
+

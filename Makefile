@@ -23,19 +23,18 @@ CCARGS=-Ilibs/luajit/ -Ilibs/libuv/ -lpthread
 
 CC=gcc
 LD=ld
-RAVA=lua/rava.sh
 
 all: rava
 
 rava: deps-rava
 	@echo "==== Building Rava $(VERSION) ===="
-	$(RAVA) -csn --compile=rava lua/main.lua lua/modules/*.lua
+	cd lua && ./rava.sh -csn --compile=rava main.lua modules/*.lua
 	@echo "==== Success builting Rava $(VERSION) ===="
 
 debug: deps-rava
 	@echo "==== Generating Rava Debug ===="
-	@echo 'require("src.main")' > ravadebug.lua
-	$(RAVA) --compile ravadebug.lua
+	@echo 'require("main")' > ravadebug.lua
+	lua/rava.sh --compile ravadebug.lua
 	@echo 'if #arg > 0 then rava.exec(unpack(arg)) ' \
 		'else msg.line("Usage: "..arg[0]:gsub("^.*/", "").." file.lua\\n\\n") ' \
 		'end' > ravaexec.lua
@@ -75,23 +74,24 @@ deps: deps-luajit deps-libuv deps-rava
 
 deps-luajit: $(LUA_LIBS)
 deps-libuv: $(UV_LIBS)
-deps-rava: $(RAVA_LIBS) $(RAVA_LUA) $(RAVA)
+deps-rava: $(RAVA_LIBS) $(RAVA_LUA)
 
-$(RAVA_LIBS) $(RAVA_LUA) $(RAVA): $(LUA_LIBS) $(UV_LIBS)
+$(RAVA_LIBS) $(RAVA_LUA): $(LUA_LIBS) $(UV_LIBS)
 	@echo "==== Generating Rava Core ===="
 	$(CC) -c src/rava.c $(CCARGS) -o src/rava.o
 	$(CC) -c src/xuv.c $(CCARGS) -o src/xuv.o
-	$(RAVA) --bytecode=init lua/init.lua lua/init.lua.o
-	$(RAVA) --build=rava src/rava.o src/xuv.o lua/init.lua.o lua/gen.lua \
-		lua/opt.lua lua/msg.lua libs/luajit/bcsave.lua \
-		libs/libuv/libuv.a libs/luajit/libluajit.a
-	$(RAVA) --datastore=ravastore libs/ravastore.o rava.a
+	cd lua && ./rava.sh --bytecode=init init.lua init.lua.o
+	cd lua && ./rava.sh --build=rava ../src/rava.o ../src/xuv.o \
+		init.lua.o gen.lua opt.lua msg.lua bytecode.lua \
+		../libs/libuv/libuv.a ../libs/luajit/libluajit.a
+	cd lua && ./rava.sh --datastore=ravastore libs/ravastore.o rava.a
 	@echo "==== Generated Rava Core ===="
 
 $(LUA_LIBS): $(LUA_DEPS)
 	mkdir -p libs/luajit/
 	cp $+ libs/luajit/
-	sed -i'.bak' -e's/^Save.\+//' -e's/^  /\t/g' -e's/^File /\t/' -e's/\.$$//' libs/luajit/bcsave.lua
+	sed -i'.bak' -e's/^Save.\+//' -e's/^  /\t/g' -e's/^File /\t/' -e's/\.$$//' \
+		libs/luajit/bcsave.lua
 
 $(UV_LIBS): $(UV_DEPS)
 	mkdir -p libs/libuv/
