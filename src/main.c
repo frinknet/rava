@@ -3,8 +3,14 @@
 #include "lua.h"
 #include "lualib.h"
 #include "lauxlib.h"
+#include "xuv.h"
 
-int main(int argc, char *argv[]) {
+/**
+ * Create a lua container from and run the lua code you pass to it
+ *
+ * returns new lua state
+ */
+lua_State* rava_newlua() {
 	int i;
 
 	lua_State* L = luaL_newstate();
@@ -14,6 +20,31 @@ int main(int argc, char *argv[]) {
 	}
 
 	luaL_openlibs(L);
+
+	lua_getglobal(L, "package");
+	lua_getfield(L, -1, "preload");
+	lua_remove(L, -2); // Remove package
+	
+	// Store uv module definition at preload.uv
+	lua_pushcfunction(L, luaopen_xuv);
+	lua_setfield(L, -2, "xuv");
+
+	return L;
+}
+
+/**
+ * Main loop sets up the first lua contaner with arg
+ *
+ * argc count of arguments
+ * argv array of argument values
+ *
+ * returns return code
+ */
+int main(int argc, char *argv[]) {
+	int i;
+
+	lua_State* L = rava_newlua();
+
 	lua_newtable(L);
 
 	for (i = 0; i < argc; i++) {
@@ -23,16 +54,6 @@ int main(int argc, char *argv[]) {
 	}
 
 	lua_setglobal(L, "arg");
-
-	lua_getglobal(L, "package");
-	lua_getfield(L, -1, "preload");
-	lua_remove(L, -2); // Remove package
-	
-	/*
-	// Store uv module definition at preload.uv
-	lua_pushcfunction(L, luaopen_luv);
-	lua_setfield(L, -2, "uv");
-	*/
 
 	int r = luaL_dostring(L, "require \"init\"");
 
