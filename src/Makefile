@@ -1,4 +1,4 @@
-RAVA_SRC=main.c rava.c ray.c
+RAVA_SRC=main.c ray.c
 RAVA_OBJ=$(RAVA_SRC:.c=.o)
 
 CCARGS=-I../libs/luajit/ -I../libs/libuv/ -lpthread
