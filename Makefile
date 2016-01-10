@@ -73,7 +73,10 @@ clean-libuv:
 clean-rava:
 	rm -f libs/ravastore.* lua/rava.a lua/*.o src/*.o lua/modules/*.o
 
-deps: deps-luajit deps-libuv deps-rava
+deps: deps-git deps-luajit deps-libuv deps-rava
+
+deps-git:
+	git submodule update --init
 
 deps-luajit: $(LUA_LIBS)
 deps-libuv: $(UV_LIBS)
@@ -100,10 +103,10 @@ $(UV_LIBS): $(UV_DEPS)
 	mkdir -p libs/libuv/
 	cp $+ libs/libuv/
 
-$(LUA_DEPS):
+$(LUA_DEPS): deps-git
 	$(MAKE) -C deps/luajit/
 
-$(UV_DEPS):
+$(UV_DEPS): deps-git
 	cd deps/libuv/ && ./autogen.sh
 	cd deps/libuv/ && ./configure
 	$(MAKE) -C deps/libuv/
