@@ -13,7 +13,7 @@ UV_LIBS=libs/libuv/libuv.a libs/libuv/uv.h
 
 RAVA_SRC=src/main.c
 RAVA_LUA=lua/gen.lua lua/msg.lua lua/opt.lua lua/init.lua
-RAVA_LIBS=libs/rava.a
+RAVA_LIBS=lua/rava.a
 
 DPREFIX=$(DESTDIR)$(PREFIX)
 INSTALL_BIN=$(DPREFIX)/bin
@@ -58,7 +58,7 @@ uninstall:
 	@echo "==== Uninstalled LuaJIT $(VERSION) from $(PREFIX) ===="
 
 clean:
-	rm -rf libs/* lua/*.o src/*.o lua/modules/*.o rava*
+	rm -rf libs/* rava*
 
 clean-all: clean clean-luajit clean-libuv clean-rava
 
@@ -71,7 +71,7 @@ clean-libuv:
 	cd deps/libuv/ && git clean -dfx
 
 clean-rava:
-	rm libs/ravastore.* lua/rava.a
+	rm libs/ravastore.* lua/rava.a lua/*.o src/*.o lua/modules/*.o
 
 deps: deps-luajit deps-libuv deps-rava
 
