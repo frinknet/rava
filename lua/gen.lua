@@ -258,8 +258,9 @@ gen.bytecode = bytecode.start
 
 -- Generate binary filestore
 gen.filestore = function(name, store, ...)
+	store = store:gsub("%..[^%.]+$", "")
 	-- open store
-	local out = io.open(store:gsub("%..+$", "")..".lua", "w+")
+	local out = io.open(store..".lua", "w+")
 	local files = {...}
 
 	-- start name
@@ -295,7 +296,7 @@ gen.filestore = function(name, store, ...)
 	out:write('return '..name)
 	out:close()
 
-	gen.bytecode(store:gsub("%..+$", "")..".lua", store:gsub("%..+$", "")..".o")
+	gen.bytecode(store..".lua", store..".o")
 end
 
 -- code repository
