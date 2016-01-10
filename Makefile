@@ -11,7 +11,7 @@ libs/luajit/bcsave.lua
 UV_DEPS=deps/libuv/.libs/* deps/libuv/include/*.h
 UV_LIBS=libs/libuv/libuv.a libs/libuv/uv.h
 
-RAVA_SRC=src/rava.c
+RAVA_SRC=src/main.c
 RAVA_LUA=lua/gen.lua lua/msg.lua lua/opt.lua lua/init.lua
 RAVA_LIBS=libs/rava.a
 
@@ -81,10 +81,10 @@ deps-rava: $(RAVA_LIBS) $(RAVA_LUA)
 
 $(RAVA_LIBS) $(RAVA_LUA): $(LUA_LIBS) $(UV_LIBS)
 	@echo "==== Generating Rava Core ===="
-	$(CC) -c src/rava.c $(CCARGS) -o src/rava.o
+	$(CC) -c src/main.c $(CCARGS) -o src/rava.o
 	$(CC) -c src/xuv.c $(CCARGS) -o src/xuv.o
 	cd lua && ./rava.sh --bytecode=init init.lua init.lua.o
-	cd lua && ./rava.sh --build=rava ../src/rava.o ../src/xuv.o \
+	cd lua && ./rava.sh --build=rava ../src/rava.o \
 		init.lua.o gen.lua opt.lua msg.lua bytecode.lua \
 		../libs/libuv/libuv.a ../libs/luajit/libluajit.a
 	cd lua && ./rava.sh --filestore=ravastore ../libs/ravastore.o rava.a
