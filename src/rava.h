@@ -45,4 +45,7 @@ typedef struct {
 }
 #define RAVA_LUA_DEBUG(s) puts("lua-rava: [DEBUG] " s)
 
+#define RAVA_LUA_CHECK_CLOSED(obj) \
+	if(!obj->data) luaL_error(L, "using a closed %s", obj->tname);
+
 LUA_API int luaopen_rava(lua_State *L);
