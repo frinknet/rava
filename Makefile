@@ -60,7 +60,7 @@ uninstall:
 clean:
 	rm -rf libs/* lua/*.o src/*.o lua/modules/*.o rava*
 
-clean-all: clean clean-luajit clean-libuv
+clean-all: clean clean-luajit clean-libuv clean-rava
 
 clean-luajit:
 	$(MAKE) clean -C deps/luajit/
