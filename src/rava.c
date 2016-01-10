@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <pthread.h>
-#include "luv.h"
 #include "xuv.h"
 #include "lua.h"
 #include "lualib.h"
@@ -26,10 +25,6 @@ lua_State* rava_newlua() {
 	lua_getfield(L, -1, "preload");
 	lua_remove(L, -2); // Remove package
 	
-	// Store uv module definition at preload.uv
-	lua_pushcfunction(L, luaopen_luv);
-	lua_setfield(L, -2, "luv");
-
 	// Store uv module definition at preload.uv
 	lua_pushcfunction(L, luaopen_xuv);
 	lua_setfield(L, -2, "xuv");
