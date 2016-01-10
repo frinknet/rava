@@ -8,6 +8,9 @@ LUA_LIBS=libs/luajit/luajit libs/luajit/lua.h libs/luajit/lualib.h \
 libs/luajit/luaconf.h libs/luajit/lauxlib.h libs/luajit/libluajit.a \
 libs/luajit/bcsave.lua
 
+UV_DEPS=deps/libuv/*.a deps/libuv/include/*.h
+UV_LIBS=libs/libuv/libuv.a libs/libluv/uv.h
+
 RAVA_SRC=src/rava.c
 RAVA_LUA=lua/rava.lua lua/msg.lua lua/opt.lua lua/init.lua
 RAVA_LIBS=libs/rava.a
