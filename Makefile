@@ -1,4 +1,4 @@
-VERSION=2.0.1
+VERSION=2.0.3
 
 export PREFIX=/usr/local
 
@@ -7,10 +7,6 @@ deps/luajit/src/jit/bcsave.lua
 LUA_LIBS=libs/luajit/luajit libs/luajit/lua.h libs/luajit/lualib.h \
 libs/luajit/luaconf.h libs/luajit/lauxlib.h libs/luajit/libluajit.a \
 libs/luajit/bcsave.lua
-
-LUV_DEPS=deps/libluv/build/*.a deps/libluv/src/*.h \
-deps/libluv/deps/libuv/include/*.h
-LUV_LIBS=libs/libluv/libluv.a libs/libluv/libuv.a libs/libluv/luv.h libs/libluv/uv.h
 
 RAVA_SRC=src/rava.c
 RAVA_LUA=lua/rava.lua lua/msg.lua lua/opt.lua lua/init.lua
@@ -68,20 +64,17 @@ clean-luajit:
 	$(MAKE) clean -C deps/luajit/
 	cd deps/luajit/ && git clean -dfx
 
-clean-libluv:
-	$(MAKE) clean -C deps/libluv/
-	cd deps/libluv/ && git clean -dfx
+clean-libuv:
+	$(MAKE) clean -C deps/libuv/
+	cd deps/libuv/ && git clean -dfx
 
 deps: deps-luajit deps-libluv deps-rava
 
 deps-luajit: $(LUA_LIBS)
-deps-libluv: $(LUV_LIBS)
+deps-libuv: $(UV_LIBS)
 deps-rava: $(RAVA_LIBS) $(RAVA_LUA)
 
-$(RAVA_LIBS): $(LUA_LIBS) $(LUV_LIBS)
-
-
-$(RAVA_LIBS): $(LUA_LIBS) $(LUV_LIBS)
+$(RAVA_LIBS) $(RAVA_LUA): $(LUA_LIBS) $(LUV_LIBS)
 	@echo "==== Generating Rava Core ===="
 	$(CC) -c src/rava.c $(CCARGS) -o src/rava.o
 	$(CC) -c src/xuv.c $(CCARGS) -o src/xuv.o
@@ -97,12 +90,14 @@ $(LUA_LIBS): $(LUA_DEPS)
 	cp $+ libs/luajit/
 	sed -i'.bak' -e's/^Save.\+//' -e's/^  /\t/g' -e's/^File /\t/' -e's/\.$$//' libs/luajit/bcsave.lua
 
-$(LUV_LIBS): $(LUV_DEPS)
-	mkdir -p libs/libluv/
-	cp $+ libs/libluv/
+$(UV_LIBS): $(UV_DEPS)
+	mkdir -p libs/libuv/
+	cp $+ libs/libuv/
 
 $(LUA_DEPS):
 	$(MAKE) -C deps/luajit/
 
-$(LUV_DEPS):
-	BUILD_MODULE=OFF $(MAKE) -C deps/libluv/
+$(UV_DEPS):
+	cd deps/libuv/ && ./autogen.sh
+	cd deps/libuv/ && ./configure
+	$(MAKE) -C deps/libuv/
