@@ -12,7 +12,8 @@ LUV_DEPS=deps/libluv/build/*.a deps/libluv/src/*.h \
 deps/libluv/deps/libuv/include/*.h
 LUV_LIBS=libs/libluv/libluv.a libs/libluv/libuv.a libs/libluv/luv.h libs/libluv/uv.h
 
-RAVA_SRC=src/rava.c src/rava.lua src/msg.lua src/opt.lua src/init.lua
+RAVA_SRC=src/rava.c
+RAVA_LUA=lua/rava.lua lua/msg.lua lua/opt.lua lua/init.lua
 RAVA_LIBS=libs/rava.a
 
 DPREFIX=$(DESTDIR)$(PREFIX)
@@ -23,13 +24,13 @@ CCARGS=-Ilibs/luajit/ -Ilibs/libluv/ -lpthread
 
 CC=gcc
 LD=ld
-RAVA=libs/luajit/luajit src/main.lua
+RAVA=libs/luajit/luajit lua/main.lua
 
 all: rava
 
 rava: deps-rava
 	@echo "==== Building Rava $(VERSION) ===="
-	$(RAVA) -csn --compile=rava src/main.lua modules/*.lua
+	$(RAVA) -csn --compile=rava main.lua modules/*.lua
 	@echo "==== Success builting Rava $(VERSION) ===="
 
 debug: deps-rava
@@ -59,7 +60,7 @@ uninstall:
 	@echo "==== Uninstalled LuaJIT $(VERSION) from $(PREFIX) ===="
 
 clean:
-	rm -rf libs/* src/*.o modules/*.o rava*
+	rm -rf libs/* lua/*.o src/*.o modules/*.o rava*
 
 clean-all: clean clean-luajit clean-libluv
 
@@ -75,15 +76,18 @@ deps: deps-luajit deps-libluv deps-rava
 
 deps-luajit: $(LUA_LIBS)
 deps-libluv: $(LUV_LIBS)
-deps-rava: $(RAVA_LIBS)
+deps-rava: $(RAVA_LIBS) $(RAVA_LUA)
+
+$(RAVA_LIBS): $(LUA_LIBS) $(LUV_LIBS)
+
 
 $(RAVA_LIBS): $(LUA_LIBS) $(LUV_LIBS)
 	@echo "==== Generating Rava Core ===="
 	$(CC) -c src/rava.c $(CCARGS) -o src/rava.o
 	$(CC) -c src/xuv.c $(CCARGS) -o src/xuv.o
-	$(RAVA) --bytecode=init src/init.lua src/init.lua.o
-	$(RAVA) --build=rava src/rava.o src/xuv.o src/init.lua.o src/rava.lua \
-		src/opt.lua src/msg.lua libs/luajit/bcsave.lua \
+	$(RAVA) --bytecode=init lua/init.lua lua/init.lua.o
+	$(RAVA) --build=rava src/rava.o src/xuv.o lua/init.lua.o lua/rava.lua \
+		lua/opt.lua lua/msg.lua libs/luajit/bcsave.lua \
 		libs/libluv/libluv.a libs/libluv/libuv.a libs/luajit/libluajit.a
 	$(RAVA) --datastore=ravastore libs/ravastore.o rava.a
 	@echo "==== Generated Rava Core ===="
