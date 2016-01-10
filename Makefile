@@ -70,6 +70,9 @@ clean-libuv:
 	$(MAKE) clean -C deps/libuv/
 	cd deps/libuv/ && git clean -dfx
 
+clean-rava:
+	rm libs/ravastore.* lua/rava.a
+
 deps: deps-luajit deps-libuv deps-rava
 
 deps-luajit: $(LUA_LIBS)
