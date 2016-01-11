@@ -11,7 +11,7 @@ libs/luajit/bcsave.lua
 UV_DEPS=deps/libuv/.libs/libuv.a deps/libuv/src/queue.h deps/libuv/include/*.h
 UV_LIBS=libs/libuv/libuv.a libs/libuv/uv.h libs/libuv/queue.h
 
-RAVA_OBJ=src/main.o src/ray.o
+RAVA_OBJ=src/main.o src/rava.o
 RAVA_LUA=lua/gen.lua lua/msg.lua lua/opt.lua lua/init.lua
 RAVA_LIBS=lua/rava.a
 
@@ -91,7 +91,7 @@ $(RAVA_LIBS) $(RAVA_LUA):
 	@echo BYTECODE lua/init.lua.o
 	@cd lua && ./rava.sh --bytecode=init init.lua init.lua.o
 	@echo BUILD lua/rava.a
-	@cd lua && ./rava.sh --build=rava ../src/main.o ../src/ray.o \
+	@cd lua && ./rava.sh --build=rava ../src/main.o ../src/rava.o \
 		init.lua.o gen.lua opt.lua msg.lua gen/bcsave.lua \
 		../libs/libuv/libuv.a ../libs/luajit/libluajit.a
 	@echo FILESTORE libs/ravastore.o

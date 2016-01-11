@@ -3,7 +3,7 @@
 #include "lua.h"
 #include "lualib.h"
 #include "lauxlib.h"
-#include "ray.h"
+#include "rava.h"
 
 /**
  * Create a lua container from and run the lua code you pass to it

@@ -1,3 +1,6 @@
+#ifndef _RAY_LIB_H_
+#define _RAY_LIB_H_
+
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
@@ -61,7 +64,7 @@ typedef union ray_req_u {
 } ray_req_t;
 
 /* default buffer size for read operations */
-#define RAY_BUF_SIZE 4096
+#define RAY_BUFFER_SIZE 4096
 
 /* max path length */
 #define RAY_MAX_PATH 1024
@@ -163,7 +166,7 @@ struct ray_evq_s {
 
 struct ray_agent_s {
   ray_handle_t  h;
-  ray_buf_t     buf;
+  ray_buf_t    buf;
   int           flags;
   int           count;
   QUEUE   fiber_queue;
@@ -183,4 +186,7 @@ struct ray_fiber_s {
   int           ref;
 };
 
-LUA_API int luaopen_ray(lua_State *L);
+static ray_fiber_t* RAY_MAIN;
+static uv_async_t   RAY_PUMP;
+
+#endif
