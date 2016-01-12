@@ -398,3 +398,52 @@ int ray_file_close(lua_State *L)
   lua_settop(L, 0);
   RAY_FS_CALL(L, close, NULL, self->h.file);
 }
+
+static luaL_Reg ray_fs_funcs[] = {
+  {"open",      ray_fs_open},
+  {"unlink",    ray_fs_unlink},
+  {"mkdir",     ray_fs_mkdir},
+  {"rmdir",     ray_fs_rmdir},
+  {"scandir",   ray_fs_scandir},
+  {"stat",      ray_fs_stat},
+  {"rename",    ray_fs_rename},
+  {"sendfile",  ray_fs_sendfile},
+  {"chmod",     ray_fs_chmod},
+  {"chown",     ray_fs_chown},
+  {"utime",     ray_fs_utime},
+  {"lstat",     ray_fs_lstat},
+  {"link",      ray_fs_link},
+  {"symlink",   ray_fs_symlink},
+  {"readlink",  ray_fs_readlink},
+  {"cwd",       ray_fs_cwd},
+  {"chdir",     ray_fs_chdir},
+  {"exepath",   ray_fs_exepath},
+  {NULL,        NULL}
+};
+
+static luaL_Reg ray_file_meths[] = {
+  {"read",       ray_file_read},
+  {"write",      ray_file_write},
+  {"close",      ray_file_close},
+  {"stat",       ray_file_stat},
+  {"sync",       ray_file_sync},
+  {"utime",      ray_file_utime},
+  {"chmod",      ray_file_chmod},
+  {"chown",      ray_file_chown},
+  {"datasync",   ray_file_datasync},
+  {"truncate",   ray_file_truncate},
+  {"__gc",       ray_file_free},
+  {"__tostring", ray_file_tostring},
+  {NULL,         NULL}
+};
+
+LUA_API int LUA_MODULE(RAY_MODULE_FS, lua_State* L)
+{
+  rayL_module(L, RAY_MODULE_FS, ray_fs_funcs);
+  rayL_class (L, RAY_CLASS_FILE, ray_file_meths);
+  lua_pop(L, 1);
+
+  ray_init_main(L);
+
+  return 1;
+}

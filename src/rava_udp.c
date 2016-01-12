@@ -5,7 +5,7 @@
 int ray_udp_new(lua_State* L)
 {
   ray_agent_t* self = ray_agent_new(L);
-  luaL_getmetatable(L, "ray.udp");
+  luaL_getmetatable(L, RAY_CLASS_UDP);
   lua_setmetatable(L, -2);
   uv_udp_init(uv_default_loop(), &self->h.udp);
   return 1;
@@ -13,7 +13,7 @@ int ray_udp_new(lua_State* L)
 
 int ray_udp_bind(lua_State* L)
 {
-  ray_agent_t* self = (ray_agent_t*)luaL_checkudata(L, 1, "ray.udp");
+  ray_agent_t* self = (ray_agent_t*)luaL_checkudata(L, 1, RAY_CLASS_UDP);
   const char*  host = luaL_checkstring(L, 2);
   int          port = luaL_checkint(L, 3);
 
@@ -41,7 +41,7 @@ void ray_udp_send_cb(uv_udp_send_t* req, int status)
 }
 
 int ray_udp_send(lua_State* L) {
-  ray_agent_t* self = (ray_agent_t*)luaL_checkudata(L, 1, "ray.udp");
+  ray_agent_t* self = (ray_agent_t*)luaL_checkudata(L, 1, RAY_CLASS_UDP);
   ray_fiber_t* curr = ray_current(L);
 
   size_t len;
@@ -131,7 +131,7 @@ void ray_udp_alloc_cb(uv_handle_t* handle, size_t len, uv_buf_t* buf)
 
 int ray_udp_recv(lua_State* L)
 {
-  ray_agent_t* self = (ray_agent_t*)luaL_checkudata(L, 1, "ray.udp");
+  ray_agent_t* self = (ray_agent_t*)luaL_checkudata(L, 1, RAY_CLASS_UDP);
   ray_fiber_t* curr = ray_current(L);
 
   if (!(self->flags & RAY_STARTED)) {
@@ -173,7 +173,7 @@ static const char* RAY_UDP_OPTS[] = { "join", "leave", NULL };
 
 int ray_udp_membership(lua_State* L)
 {
-  ray_agent_t* self = (ray_agent_t*)luaL_checkudata(L, 1, "ray.udp");
+  ray_agent_t* self = (ray_agent_t*)luaL_checkudata(L, 1, RAY_CLASS_UDP);
   const char*  iaddr = luaL_checkstring(L, 3);
   const char*  maddr = luaL_checkstring(L, 2);
 
@@ -181,7 +181,33 @@ int ray_udp_membership(lua_State* L)
   uv_membership membership = option ? UV_LEAVE_GROUP : UV_JOIN_GROUP;
 
   int rc = uv_udp_set_membership(&self->h.udp, maddr, iaddr, membership);
+
   if (rc) return ray_push_error(L, rc);
+
+  return 1;
+}
+
+static luaL_Reg ray_udp_funcs[] = {
+  {"listen",    ray_udp_new},
+  {NULL,        NULL}
+};
+
+static luaL_Reg ray_udp_meths[] = {
+  {"send",      ray_udp_send},
+  {"recv",      ray_udp_recv},
+  {"bind",      ray_udp_bind},
+  {"membership",ray_udp_membership},
+  {"__gc",      ray_agent_free},
+  {NULL,        NULL}
+};
+
+LUA_API int LUA_MODULE(RAY_MODULE_UDP, lua_State* L)
+{
+  rayL_module(L, RAY_MODULE_UDP, ray_udp_funcs);
+  rayL_class(L, RAY_CLASS_UDP, ray_udp_meths);
+  lua_pop(L, 1);
+
+  ray_init_main(L);
 
   return 1;
 }

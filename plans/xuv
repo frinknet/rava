@@ -1,28 +1,33 @@
 require("rava")
 
-tcp.listen("ip:port", callback(stream))
-tcp.connect("ip:port", callback(stream))
+socket.tcp()
+socket.udp()
+socket.pipe()
+socket.http()
+socket.https()
+socket.ws()
+socket.wss()
+socket.ftp()
+socket.sftp()
+socket.ssh()
 
-udp.listen("ip:port", callback(stream))
-udp.connect("ip:port", callback(stream))
+socket.listen("tcp://ip:port", callback(tcp))
+socket.listen("udp://ip:port", callback(udp))
+socket.listen("pipe:/file/name", callback(pipe))
+socket.listen("http://ip:80", callback(http))
+socket.listen("https://ip:8080", callback(https))
+socket.listen("ws://ip:8080", callback(ws))
+socket.listen("wss://ip:8080", callback(wss))
+socket.listen("ftp://ip:8080", callback(ftp))
+socket.listen("wss://ip:8080", callback(wss))
 
-pipe.listen("sock", callback(stream))
-pipe.connect("sock", callback(stream))
+socket.connect("tcp://ip:port", callback(tcp))
+socket.connect("udp://ip:port", callback(udp))
+socket.connect("pipe:/file/name", callback(pipe))
 
-stream:sync(true or false)
-stream:write(chunk, callback(error))
-stream:read(callback(chunk))
-stream:stop()
-stream:wait(callback(note))
-stream:close(note)
 
-http.listen("ip:port", callback(router))
-http.connect("url", callback(router))
-http.[method]("url", data, headers)
-
-https.listen("ip:port", callback(route))
-https.connect("url", callback(route))
-https.[method]("url", data, headers)
+stream:route("site.com/url&query", function()
+end, "GET", "POST")
 
 	route.url
 	route.code
@@ -38,8 +43,17 @@ http.request("url", callback(route, ...), callback(route))
 request.something.somethingelse.get()
 
 
-fiber.create(callback(coroutine))
-thread.create(callback(coroutine))
+process.idle(callback(idle))
+process.fiber(callback(idle))
+process.thread(callback(idle))
+process.timer(callback(idle))
+process.sleep(sleep)
+process.title(name)
+process.find(name)
+
+process.idle(callback(coroutine))
+process.fiber(callback(coroutine))
+process.thread(callback(coroutine))
 
 	coroutine:yield()
 	coroutine:sleep()
@@ -47,26 +61,40 @@ thread.create(callback(coroutine))
 	coroutine:close()
 
 
-timer.new(freqency, repitition, cb(timer))
+process.timer(freqency, repitition, cb(timer))
 
 	timer:yield()
 	timer:sleep()
 	timer:close()
 
 
-event.listen("triggers", callback(incident))
-event.trigger("trigger", ...)
-event.remove("trigger", callback)
+process.event(trigger, callback(...)))
+process.trigger(trigger, ...)
+process.remove(trigger)
+process.kill(name)
 
 	incident.type
 	incident.time
 	incident.data
 
-cache.new(size, ttl, factor, callback(k))
+system.cpu()
+system.load()
+system.memory()
+system.interfaces()
+system.execute(command, callback(stdin, stdout, stderr))
+
+system.dns()
+system.uptime()
+system.hrtime()
+system.[fs_func]()
+system.cache(size, ttl, factor, MT)
 
 	cache:set(k, v)
 	cache:set(k, callback(k))
 	cache:get(k, callback(k))
+	cache:inc(k)
+	cache:dec(k)
+	cache:del(k)
 	cache:size(k)
 	cache:exists(k, ...)
 	cache:expire(k, s)
@@ -75,13 +103,6 @@ cache.new(size, ttl, factor, callback(k))
 	cache:keys(p)
 
 
-system.cpu()
-system.load()
-system.memory()
-system.interfaces()
-system.execute(command, callback(stdin, stdout, stderr))
-
-system.uptime()
-system.[fs_func]()
-
-
+socket
+process
+system

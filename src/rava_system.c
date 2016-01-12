@@ -221,10 +221,20 @@ int ray_system_interfaces(lua_State* L)
 }
 
 static luaL_Reg ray_system_funcs[] = {
- {"cpus",  ray_system_cpus},
- {"mem_free",  ray_system_mem_free},
- {"mem_total", ray_system_mem_total},
- {"hrtime",    ray_system_hrtime},
- {"interfaces",ray_system_interfaces},
- {"dnslookup",ray_system_getaddrinfo},
+ {"cpus",       ray_system_cpus},
+ {"mem_free",   ray_system_mem_free},
+ {"mem_total",  ray_system_mem_total},
+ {"hrtime",     ray_system_hrtime},
+ {"interfaces", ray_system_interfaces},
+ {"dnslookup",  ray_system_getaddrinfo},
 };
+
+LUA_API int LUA_MODULE(RAY_MODULE_SYSTEM, lua_State* L)
+{
+  rayL_module(L, RAY_MODULE_SYSTEM, system_funcs);
+  lua_pop(L, 1);
+
+  ray_init_main(L);
+
+  return 1;
+}

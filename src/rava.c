@@ -1,4 +1,15 @@
-#include "rava.h"
+#include "rava_libs.h"
+
+#include "rava_agent.c"
+#include "rava_buffer.c"
+#include "rava_fiber.c"
+#include "rava_timer.c"
+#include "rava_stream.c"
+#include "rava_state.c"
+#include "rava_pipe.c"
+#include "rava_tcp.c"
+#include "rava_udp.c"
+#include "rava_fs.c"
 
 void ray_pump_cb(uv_async_t* async)
 {
@@ -11,26 +22,6 @@ void ray_pump(void)
 }
 
 
-#include "rava_state.h"
-#include "rava_buffer.h"
-#include "rava_fiber.h"
-#include "rava_timer.h"
-#include "rava_stream.h"
-#include "rava_pipe.h"
-#include "rava_tcp.h"
-#include "rava_udp.h"
-#include "rava_fs.h"
-
-#include "rava_state.c"
-#include "rava_buffer.c"
-#include "rava_fiber.c"
-#include "rava_timer.c"
-#include "rava_stream.c"
-#include "rava_pipe.c"
-#include "rava_tcp.c"
-#include "rava_udp.c"
-#include "rava_fs.c"
-
 static luaL_Reg ray_funcs[] = {
   {"self",      ray_self},
   {"fiber",     ray_fiber_new},
@@ -42,7 +33,8 @@ static luaL_Reg ray_funcs[] = {
   {NULL,        NULL}
 };
 
-LUALIB_API int luaopen_ray(lua_State* L) {
+LUA_API int LUA_MODULE(RAY_MODULE, lua_State* L)
+{
 
 #ifndef WIN32
   signal(SIGPIPE, SIG_IGN);
@@ -50,41 +42,12 @@ LUALIB_API int luaopen_ray(lua_State* L) {
 
   lua_settop(L, 0);
 
-  luaL_newmetatable(L, "ray.fiber");
-  luaL_register(L, NULL, ray_fiber_meths);
-  lua_pushvalue(L, -1);
-  lua_setfield(L, -2, "__index");
-  lua_pop(L, 1);
-
-  luaL_newmetatable(L, "ray.timer");
-  luaL_register(L, NULL, ray_timer_meths);
-  lua_pushvalue(L, -1);
-  lua_setfield(L, -2, "__index");
-  lua_pop(L, 1);
-
-  luaL_newmetatable(L, "ray.pipe");
-  luaL_register(L, NULL, ray_pipe_meths);
-  lua_pushvalue(L, -1);
-  lua_setfield(L, -2, "__index");
-  lua_pop(L, 1);
-
-  luaL_newmetatable(L, "ray.tcp");
-  luaL_register(L, NULL, ray_tcp_meths);
-  lua_pushvalue(L, -1);
-  lua_setfield(L, -2, "__index");
-  lua_pop(L, 1);
-
-  luaL_newmetatable(L, "ray.udp");
-  luaL_register(L, NULL, ray_udp_meths);
-  lua_pushvalue(L, -1);
-  lua_setfield(L, -2, "__index");
-  lua_pop(L, 1);
-
-  luaL_newmetatable(L, "ray.file");
-  luaL_register(L, NULL, ray_file_meths);
-  lua_pushvalue(L, -1);
-  lua_setfield(L, -2, "__index");
-  lua_pop(L, 1);
+  LUA_MODULE(RAY_MODULE_FS, L)
+  LUA_MODULE(RAY_MODULE_SYSTEM, L)
+  LUA_MODULE(RAY_MODULE_FIBER, L)
+  LUA_MODULE(RAY_MODULE_PIPE, L)
+  LUA_MODULE(RAY_MODULE_TCP, L)
+  LUA_MODULE(RAY_MODULE_UDP, L)
 
   uv_async_init(uv_default_loop(), &RAY_PUMP, ray_pump_cb);
   uv_unref((uv_handle_t*)&RAY_PUMP);
@@ -100,7 +63,7 @@ LUALIB_API int luaopen_ray(lua_State* L) {
 
   uv_default_loop()->data = RAY_MAIN;
 
-  luaL_register(L, "ray", ray_funcs);
+  luaL_register(L, RAY_MODULE, ray_funcs);
+
   return 1;
 }
-

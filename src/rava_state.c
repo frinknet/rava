@@ -1,5 +1,35 @@
 #include "rava_state.h"
 
+void ray_close_cb(uv_handle_t* handle)
+{
+  ray_agent_t* self = container_of(handle, ray_agent_t, h);
+  TRACE("closed: %p\n", self);
+  ray_fiber_t* curr = (ray_fiber_t*)self->data;
+  if (curr) ray_resume(curr, 0);
+  if (self->ref != LUA_NOREF) {
+    TRACE("UNREF: %i!\n", self->ref);
+    luaL_unref(RAY_MAIN->L, LUA_REGISTRYINDEX, self->ref);
+    self->ref = LUA_NOREF;
+  }
+}
+
+int ray_close(lua_State* L)
+{
+  ray_agent_t* self = (ray_agent_t*)lua_touserdata(L, 1);
+  if (!uv_is_closing(&self->h.handle)) {
+    ray_fiber_t* curr = ray_current(L);
+    self->data = curr;
+    uv_close(&self->h.handle, ray_close_cb);
+    return ray_suspend(curr);
+  }
+  return 0;
+}
+
+void ray_close_null_cb(uv_handle_t* handle)
+{
+  TRACE("running null close cb - data: %p\n", handle->data);
+}
+
 ray_fiber_t* ray_current(lua_State* L)
 {
   (void)L;

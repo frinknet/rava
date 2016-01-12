@@ -160,6 +160,11 @@ int ray_tcp_getpeername(lua_State* L)
   return 1;
 }
 
+static luaL_Reg ray_tcp_funcs[] = {
+  {"listen",    ray_tcp_new},
+  {NULL,        NULL}
+};
+
 static luaL_Reg ray_tcp_meths[] = {
   {"read",      ray_read},
   {"write",     ray_write},
@@ -176,3 +181,15 @@ static luaL_Reg ray_tcp_meths[] = {
   {"__gc",      ray_agent_free},
   {NULL,        NULL}
 };
+
+
+LUA_API int LUA_MODULE(RAY_MODULE_TCP, lua_State* L)
+{
+  rayL_module(L, RAY_MODULE_TCP, ray_tcp_funcs);
+  rayL_class(L, RAY_CLASS_TCP, ray_tcp_meths);
+  lua_pop(L, 1);
+
+  ray_init_main(L);
+
+  return 1;
+}

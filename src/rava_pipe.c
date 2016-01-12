@@ -57,11 +57,15 @@ int ray_pipe_connect(lua_State* L)
   return ray_suspend(curr);
 }
 
+static luaL_Reg ray_pipe_funcs[] = {
+  {"listen",    ray_pipe_new},
+  {NULL,        NULL}
+};
+
 static luaL_Reg ray_pipe_meths[] = {
   {"read",      ray_read},
   {"write",     ray_write},
   {"close",     ray_close},
-  {"listen",    ray_listen},
   {"shutdown",  ray_shutdown},
   {"open",      ray_pipe_open},
   {"accept",    ray_pipe_accept},
@@ -71,3 +75,14 @@ static luaL_Reg ray_pipe_meths[] = {
   {NULL,        NULL}
 };
 
+
+LUA_API int LUA_MODULE(RAY_MODULE_PIPE, lua_State* L)
+{
+  rayL_module(L, RAY_MODULE_PIPE, ray_pipe_funcs);
+  rayL_class(L, RAY_CLASS_PIPE, ray_pipe_meths);
+  lua_pop(L, 1);
+
+  ray_init_main(L);
+
+  return 1;
+}

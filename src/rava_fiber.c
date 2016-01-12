@@ -55,6 +55,11 @@ int ray_fiber_join(lua_State* L)
   return ray_suspend(curr);
 }
 
+static luaL_Reg ray_fiber_funcs[] = {
+  {"create",   ray_fiber_new},
+  {NULL,        NULL}
+};
+
 static luaL_Reg ray_fiber_meths[] = {
   {"join",      ray_fiber_join},
   {"ready",     ray_fiber_ready},
@@ -62,4 +67,20 @@ static luaL_Reg ray_fiber_meths[] = {
   {NULL,        NULL}
 };
 
+LUA_API int LUA_MODULE(RAY_MODULE_FIBER, lua_State* L)
+{
+  rayL_module(L, RAY_MODULE_FIBER, ray_fiber_funcs);
 
+  /* borrow coroutine.yield (fast on LJ2) */
+  lua_getglobal(L, "coroutine");
+  lua_getfield(L, -1, "yield");
+  lua_setfield(L, -3, "yield");
+  lua_pop(L, 1); /* coroutine */
+
+  rayL_class(L, RAY_CLASS_FIBER, ray_fiber_meths);
+  lua_pop(L, 1);
+
+  ray_init_main(L);
+
+  return 1;
+}

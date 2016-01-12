@@ -87,9 +87,24 @@ typedef union ray_req_u {
 #define ray_absindex(L, i) \
   ((i) > 0 || (i) <= LUA_REGISTRYINDEX ? (i) : lua_gettop(L) + (i) + 1)
 
+#define LUA_MODULE(module, L) \
+  loaopen_#module(L)
+
+
 #define RAY_STARTED 1
 #define RAY_CLOSED  2
 #define RAY_RUNNING 4
+
+#define RAY_MODULE         "ray"
+#define RAY_MODULE_FS      "ray_fs"
+#define RAY_MODULE_SYSTEM  "ray_system"
+
+#define RAY_CLASS_FIBER    "ray.fiber"
+#define RAY_CLASS_FILE     "ray.file"
+#define RAY_CLASS_PIPE     "ray.pipe"
+#define RAY_CLASS_TCP      "ray.tcp"
+#define RAY_CLASS_TIMER    "ray.timer"
+#define RAY_CLASS_UDP      "ray.udp"
 
 typedef struct ray_fiber_s  ray_fiber_t;
 typedef struct ray_agent_s  ray_agent_t;
@@ -102,12 +117,6 @@ struct ray_buf_s {
   size_t  offs;
   char*   base;
 };
-
-int ray_resume (ray_fiber_t*, int);
-int ray_ready  (ray_fiber_t*);
-int ray_suspend(ray_fiber_t*);
-
-ray_fiber_t* ray_current(lua_State*);
 
 typedef enum {
   RAY_UNKNOWN = -1,
@@ -188,5 +197,15 @@ struct ray_fiber_s {
 
 static ray_fiber_t* RAY_MAIN;
 static uv_async_t   RAY_PUMP;
+
+int rayL_traceback(lua_State* L);
+int rayL_require(lua_State* L, const char* path);
+int rayL_lib_decoder(lua_State* L);
+int rayL_lib_encoder(lua_State* L);
+int rayL_module(lua_State* L, const char* name, luaL_Reg* funcs);
+int rayL_class(lua_State* L, const char* name, luaL_Reg* meths);
+int rayL_extend(lua_State* L, const char* base, const char* name, luaL_Reg* meths);
+void* rayL_checkudata(lua_State* L, int idx, const char* name);
+void rayL_dump_stack(lua_State* L);
 
 #endif
