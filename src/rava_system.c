@@ -1,138 +1,32 @@
-#include "rava_system.h"
+#include <stdio.h>
 
-void ray_system_getaddrinfo_cb(uv_getaddrinfo_t* req, int s, struct addrinfo* ai)
-{
-  ray_fiber_t* self = container_of(req, ray_fiber_t, r);
-  char host[INET6_ADDRSTRLEN];
-  int  port = 0;
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-  if (ai->ai_family == PF_INET) {
-    struct sockaddr_in* addr = (struct sockaddr_in*)ai->ai_addr;
-    uv_ip4_name(addr, host, INET6_ADDRSTRLEN);
-    port = addr->sin_port;
-  }
-  else if (ai->ai_family == PF_INET6) {
-    struct sockaddr_in6* addr = (struct sockaddr_in6*)ai->ai_addr;
-    uv_ip6_name(addr, host, INET6_ADDRSTRLEN);
-    port = addr->sin6_port;
-  }
+#include "lua.h"
+#include "lualib.h"
+#include "lauxlib.h"
 
-  lua_settop(self->L, 0);
-
-  lua_pushstring (self->L, host);
-  lua_pushinteger(self->L, port);
-
-  uv_freeaddrinfo(ai);
-  ray_resume(self, 2);
+#ifdef __cplusplus
 }
+#endif
 
-int ray_system_getaddrinfo(lua_State* L)
-{
-  ray_fiber_t* curr = ray_current(L);
-  uv_getaddrinfo_t* req = &curr->r.getaddrinfo;
 
-  const char* node      = NULL;
-  const char* service   = NULL;
-  struct addrinfo hints;
+#include "rava.h"
 
-  if (!lua_isnoneornil(L, 1)) {
-    node = luaL_checkstring(L, 1);
-  }
-  if (!lua_isnoneornil(L, 2)) {
-    service = luaL_checkstring(L, 2);
-  }
-  if (node == NULL && service == NULL) {
-    return luaL_error(L, "getaddrinfo: provide either node or service");
-  }
-
-  hints.ai_family   = PF_INET;
-  hints.ai_socktype = SOCK_STREAM;
-  hints.ai_protocol = IPPROTO_TCP;
-  hints.ai_flags    = 0;
-
-  if (lua_istable(L, 3)) {
-    lua_getfield(L, 3, "family");
-    if (!lua_isnil(L, -1)) {
-      const char* s = lua_tostring(L, -1);
-      if (strcmp(s, "INET") == 0) {
-        hints.ai_family = PF_INET;
-      }
-      else if (strcmp(s, "INET6") == 0) {
-        hints.ai_family = PF_INET6;
-      }
-      else {
-        return luaL_error(L, "unsupported family: %s", s);
-      }
-    }
-    lua_pop(L, 1);
-
-    lua_getfield(L, 3, "socktype");
-    if (!lua_isnil(L, -1)) {
-      const char* s = lua_tostring(L, -1);
-      if (strcmp(s, "STREAM") == 0) {
-        hints.ai_socktype = SOCK_STREAM;
-      }
-      else if (strcmp(s, "DGRAM")) {
-        hints.ai_socktype = SOCK_DGRAM;
-      }
-      else {
-        return luaL_error(L, "unsupported socktype: %s", s);
-      }
-    }
-    lua_pop(L, 1);
-
-    lua_getfield(L, 3, "protocol");
-    if (!lua_isnil(L, -1)) {
-      const char* s = lua_tostring(L, -1);
-      if (strcmp(s, "TCP") == 0) {
-        hints.ai_protocol = IPPROTO_TCP;
-      }
-      else if (strcmp(s, "UDP") == 0) {
-        hints.ai_protocol = IPPROTO_UDP;
-      }
-      else {
-        return luaL_error(L, "unsupported protocol: %s", s);
-      }
-    }
-    lua_pop(L, 1);
-  }
-
-  uv_loop_t* loop = uv_default_loop();
-  int rc = uv_getaddrinfo(loop, req, ray_system_getaddrinfo_cb, node, service, &hints);
-  if (rc) return ray_push_error(L, rc);
-
-  return ray_suspend(curr);
-}
-
-int ray_system_mem_free(lua_State* L)
-{
-  lua_pushinteger(L, uv_get_free_memory());
-  return 1;
-}
-
-int ray_system_mem_total(lua_State* L)
-{
-  lua_pushinteger(L, uv_get_total_memory());
-  return 1;
-}
-
-int ray_system_hrtime(lua_State* L)
-{
-  lua_pushinteger(L, uv_hrtime());
-  return 1;
-}
-
-int ray_system_cpus(lua_State* L)
+static int rava_system_cpus(lua_State* L)
 {
   int size, i;
   uv_cpu_info_t* info;
-  int err = uv_cpu_info(&info, &size);
+  int r = uv_cpu_info(&info, &size);
 
   lua_settop(L, 0);
 
-  if (err) {
+  if (r < 0) {
     lua_pushboolean(L, 0);
-    luaL_error(L, uv_strerror(err));
+    luaL_error(L, uv_strerror(r));
+
     return 2;
   }
 
@@ -170,22 +64,49 @@ int ray_system_cpus(lua_State* L)
   }
 
   uv_free_cpu_info(info, size);
+
   return 1;
 }
 
-int ray_system_interfaces(lua_State* L)
+static int rava_system_load(lua_State* L) {
+	double loadavg;
+	register int r = uv_loadavg(&loadavg);
+
+	if(r < 0) {
+		return luaL_error(L, uv_strerror(r));
+	}
+
+	lua_pushnumber(L, loadavg);
+
+	return 1;
+}
+
+static int rava_system_memory(lua_State* L)
+{
+  lua_settop(L, 0);
+  lua_newtable(L);
+  lua_pushinteger(L, uv_get_free_memory());
+  lua_setfield(L, -2, "free");
+  lua_pushinteger(L, uv_get_total_memory());
+  lua_setfield(L, -2, "total");
+
+  return 1;
+}
+
+static int rava_system_interfaces(lua_State* L)
 {
   int size, i;
   char buf[INET6_ADDRSTRLEN];
 
   uv_interface_address_t* info;
-  int err = uv_interface_addresses(&info, &size);
+  int r = uv_interface_addresses(&info, &size);
 
   lua_settop(L, 0);
 
-  if (err) {
+  if (r < 0) {
     lua_pushboolean(L, 0);
-    luaL_error(L, uv_strerror(err));
+    luaL_error(L, uv_strerror(r));
+
     return 2;
   }
 
@@ -220,21 +141,44 @@ int ray_system_interfaces(lua_State* L)
   return 1;
 }
 
-static luaL_Reg ray_system_funcs[] = {
- {"cpus",       ray_system_cpus},
- {"mem_free",   ray_system_mem_free},
- {"mem_total",  ray_system_mem_total},
- {"hrtime",     ray_system_hrtime},
- {"interfaces", ray_system_interfaces},
- {"dnslookup",  ray_system_getaddrinfo},
-};
-
-LUA_API int LUA_MODULE(RAY_MODULE_SYSTEM, lua_State* L)
+static int rava_system_timecode(lua_State* L)
 {
-  rayL_module(L, RAY_MODULE_SYSTEM, system_funcs);
-  lua_pop(L, 1);
-
-  ray_init_main(L);
-
+  lua_pushinteger(L, uv_hrtime());
   return 1;
 }
+
+static int rava_system_uptime(lua_State* L) {
+	double uptime;
+	register int r = uv_uptime(&uptime);
+
+	if(r < 0) {
+		return luaL_error(L, uv_strerror(r));
+	}
+
+	lua_pushnumber(L, uptime);
+
+	return 1;
+}
+
+static int rava_system_serialize(lua_State* L)
+{
+  return ravaL_serialize_encode(L, lua_gettop(L));
+}
+
+static int rava_system_unserialize(lua_State* L)
+{
+  return ravaL_serialize_decode(L);
+}
+
+luaL_Reg rava_system_funcs[] = {
+  {"fs",          rava_system_fs},
+  {"cpus",        rava_system_cpus},
+  {"load",        rava_system_load},
+  {"memory",      rava_system_memory},
+  {"interfaces",  rava_system_interfaces},
+  {"timecode",    rava_system_timecode},
+  {"uptime",      rava_system_uptime},
+  {"serialize",   rava_system_serialize},
+  {"unserialize", rava_system_unserialize},
+  {NULL,          NULL}
+};

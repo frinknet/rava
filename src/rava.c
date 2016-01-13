@@ -1,69 +1,139 @@
-#include "rava_libs.h"
+#include <stdio.h>
 
-#include "rava_agent.c"
-#include "rava_buffer.c"
-#include "rava_fiber.c"
-#include "rava_timer.c"
-#include "rava_stream.c"
-#include "rava_state.c"
-#include "rava_pipe.c"
-#include "rava_tcp.c"
-#include "rava_udp.c"
-#include "rava_fs.c"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-void ray_pump_cb(uv_async_t* async)
-{
-  (void)async;
+#include "lua.h"
+#include "lualib.h"
+#include "lauxlib.h"
+
+#ifdef __cplusplus
 }
-
-void ray_pump(void)
-{
-  uv_async_send(&RAY_PUMP);
-}
+#endif
 
 
-static luaL_Reg ray_funcs[] = {
-  {"self",      ray_self},
-  {"fiber",     ray_fiber_new},
-  {"timer",     ray_timer_new},
-  {"pipe",      ray_pipe_new},
-  {"tcp",       ray_tcp_new},
-  {"udp",       ray_udp_new},
-  {"run",       ray_run},
-  {NULL,        NULL}
-};
-
-LUA_API int LUA_MODULE(RAY_MODULE, lua_State* L)
+#ifdef __cplusplus
+extern "C" {
+#endif
+LUALIB_API int luaopen_rava(lua_State *L)
 {
 
 #ifndef WIN32
   signal(SIGPIPE, SIG_IGN);
 #endif
 
+  int i;
+  uv_loop_t*    loop;
+  rava_state_t*  curr;
+  rava_object_t* stdfh;
+
   lua_settop(L, 0);
 
-  LUA_MODULE(RAY_MODULE_FS, L)
-  LUA_MODULE(RAY_MODULE_SYSTEM, L)
-  LUA_MODULE(RAY_MODULE_FIBER, L)
-  LUA_MODULE(RAY_MODULE_PIPE, L)
-  LUA_MODULE(RAY_MODULE_TCP, L)
-  LUA_MODULE(RAY_MODULE_UDP, L)
+  /* register decoders */
+  lua_pushcfunction(L, ravaL_lib_decoder);
+  lua_setfield(L, LUA_REGISTRYINDEX, "rava:lib:decoder");
 
-  uv_async_init(uv_default_loop(), &RAY_PUMP, ray_pump_cb);
-  uv_unref((uv_handle_t*)&RAY_PUMP);
+  /* rava */
+  ravaL_new_module(L, "rava", rava_funcs);
 
-  RAY_MAIN = (ray_fiber_t*)malloc(sizeof(ray_fiber_t));
-  RAY_MAIN->L   = L;
-  RAY_MAIN->ref = LUA_NOREF;
+  /* rava.thread */
+  ravaL_new_module(L, "rava_thread", rava_thread_funcs);
+  lua_setfield(L, -2, "thread");
+  ravaL_new_class(L, RAVA_THREAD_T, rava_thread_meths);
+  lua_pop(L, 1);
 
-  RAY_MAIN->flags = RAY_STARTED;
+  if (!MAIN_INITIALIZED) {
+    ravaL_thread_init_main(L);
+    lua_pop(L, 1);
+  }
 
-  QUEUE_INIT(&RAY_MAIN->queue);
-  QUEUE_INIT(&RAY_MAIN->fiber_queue);
+  /* rava.fiber */
+  ravaL_new_module(L, "rava_fiber", rava_fiber_funcs);
 
-  uv_default_loop()->data = RAY_MAIN;
+  /* borrow coroutine.yield (fast on LJ2) */
+  lua_getglobal(L, "coroutine");
+  lua_getfield(L, -1, "yield");
+  lua_setfield(L, -3, "yield");
+  lua_pop(L, 1); /* coroutine */
 
-  luaL_register(L, RAY_MODULE, ray_funcs);
+  lua_setfield(L, -2, "fiber");
 
+  ravaL_new_class(L, RAVA_FIBER_T, rava_fiber_meths);
+  lua_pop(L, 1);
+
+  /* rava.serialize */
+  ravaL_new_module(L, "rava_serialize", rava_serialize_funcs);
+  lua_setfield(L, -2, "serialize");
+
+  /* rava.timer */
+  ravaL_new_module(L, "rava_timer", rava_timer_funcs);
+  lua_setfield(L, -2, "timer");
+  ravaL_new_class(L, RAVA_TIMER_T, rava_timer_meths);
+  lua_pop(L, 1);
+
+  /* rava.idle */
+  ravaL_new_module(L, "rava_idle", rava_idle_funcs);
+  lua_setfield(L, -2, "idle");
+  ravaL_new_class(L, RAVA_IDLE_T, rava_idle_meths);
+  lua_pop(L, 1);
+
+  /* rava.fs */
+  ravaL_new_module(L, "rava_system_fs", rava_system_fs_funcs);
+  lua_setfield(L, -2, "fs");
+  ravaL_new_class(L, RAVA_FILE_T, rava_system_file_meths);
+  lua_pop(L, 1);
+
+  /* rava.pipe */
+  ravaL_new_module(L, "rava_pipe", rava_pipe_funcs);
+  lua_setfield(L, -2, "pipe");
+  ravaL_new_class(L, RAVA_PIPE_T, rava_stream_meths);
+  luaL_register(L, NULL, rava_pipe_meths);
+  lua_pop(L, 1);
+
+  /* rava.std{in,out,err} */
+  if (!MAIN_INITIALIZED) {
+    MAIN_INITIALIZED = 1;
+    loop = ravaL_event_loop(L);
+    curr = ravaL_state_self(L);
+
+    const char* stdfhs[] = { "stdin", "stdout", "stderr" };
+    for (i = 0; i < 3; i++) {
+#ifdef WIN32
+      const uv_file fh = GetStdHandle(i == 0 ? STD_INPUT_HANDLE
+       : (i == 1 ? STD_OUTPUT_HANDLE : STD_ERROR_HANDLE));
+#else
+      const uv_file fh = i;
+#endif
+      stdfh = (rava_object_t*)lua_newuserdata(L, sizeof(rava_object_t));
+      luaL_getmetatable(L, RAVA_PIPE_T);
+      lua_setmetatable(L, -2);
+      ravaL_object_init(curr, stdfh);
+      uv_pipe_init(loop, &stdfh->h.pipe, 0);
+      uv_pipe_open(&stdfh->h.pipe, fh);
+      lua_pushvalue(L, -1);
+      lua_setfield(L, LUA_REGISTRYINDEX, stdfhs[i]);
+      lua_setfield(L, -2, stdfhs[i]);
+    }
+  }
+
+  /* rava.net */
+  ravaL_new_module(L, "rava_net", rava_net_funcs);
+  lua_setfield(L, -2, "net");
+  ravaL_new_class(L, RAVA_NET_TCP_T, rava_stream_meths);
+  luaL_register(L, NULL, rava_net_tcp_meths);
+  lua_pop(L, 1);
+
+  /* rava.process */
+  ravaL_new_module(L, "rava_process", rava_process_funcs);
+  lua_setfield(L, -2, "process");
+  ravaL_new_class(L, RAVA_PROCESS_T, rava_process_meths);
+  lua_pop(L, 1);
+
+  lua_settop(L, 1);
   return 1;
 }
+
+#ifdef __cplusplus
+}
+#endif
