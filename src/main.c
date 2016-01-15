@@ -26,8 +26,8 @@ lua_State* rava_newlua() {
 	lua_remove(L, -2); // Remove package
 	
 	// Store rava module definition at preload.rava
-	lua_pushcfunction(L, luaopen_ray);
-	lua_setfield(L, -2, "ray");
+	lua_pushcfunction(L, luaopen_rava);
+	lua_setfield(L, -2, "rava");
 
 	return L;
 }
@@ -40,7 +40,8 @@ lua_State* rava_newlua() {
  *
  * returns return code
  */
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
 	int i;
 
 	lua_State* L = rava_newlua();
