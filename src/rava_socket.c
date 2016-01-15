@@ -1,5 +1,14 @@
 #include "rava.h"
+#include "rava_common.h"
 #include <string.h>
+
+LUA_API int luaopen_socket_pipe(lua_State* L);
+LUA_API int luaopen_socket_udp(lua_State* L);
+LUA_API int luaopen_socket_tcp(lua_State* L);
+
+int rava_new_pipe(lua_State* L);
+int rava_new_tcp(lua_State* L);
+int rava_new_udp(lua_State* L);
 
 static void _getaddrinfo_cb(uv_getaddrinfo_t* req, int s, struct addrinfo* ai)
 {
@@ -108,10 +117,22 @@ static int rava_dns_resolve(lua_State* L)
 }
 
 luaL_Reg rava_socket_funcs[] = {
+  {"pipe",        rava_new_pipe},
   {"tcp",         rava_new_tcp},
   {"udp",         rava_new_udp},
-  {"pipe",        rava_new_pipe},
   {"dnsresolve",  rava_dns_resolve},
   {NULL,          NULL}
 };
 
+LUA_API int luaopen_rava_socket(lua_State* L)
+{
+	ravaL_module(L, RAVA_SOCKET, rava_socket_funcs);
+
+	luaopen_rava_socket_pipe(L);
+	luaopen_rava_socket_udp(L);
+	luaopen_rava_socket_tcp(L);
+
+	lua_pop(L, 1);
+
+	return 1;
+}

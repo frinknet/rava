@@ -71,36 +71,13 @@ typedef union rava_req_u {
 /* max path length */
 #define RAVA_MAX_PATH 1024
 
-/* metatables for various types */
-#define RAVA_NS_T          "rava.ns"
-#define RAVA_COND_T        "rava.cond"
-#define RAVA_FIBER_T       "rava.fiber"
-#define RAVA_THREAD_T      "rava.thread"
-#define RAVA_ASYNC_T       "rava.async"
-#define RAVA_TIMER_T       "rava.timer"
-#define RAVA_IDLE_T        "rava.idle"
-#define RAVA_FS_T          "rava.fs"
-#define RAVA_FS_POLL_T     "rava.fs.poll"
-#define RAVA_FILE_T        "rava.file"
-#define RAVA_PIPE_T        "rava.pipe"
-#define RAVA_TTY_T         "rava.tty"
-#define RAVA_PROCESS_T     "rava.process"
-#define RAVA_NET_TCP_T     "rava.net.tcp"
-#define RAVA_NET_UDP_T     "rava.net.udp"
-
 /* state flags */
-#define RAVA_FSTART (1 << 0)
-#define RAVA_FREADY (1 << 1)
-#define RAVA_FMAIN  (1 << 2)
-#define RAVA_FWAIT  (1 << 3)
-#define RAVA_FJOIN  (1 << 4)
-#define RAVA_FDEAD  (1 << 5)
-
-/* ØMQ flags */
-#define RAVA_ZMQ_SCLOSED (1 << 0)
-#define RAVA_ZMQ_XDUPCTX (1 << 1)
-#define RAVA_ZMQ_WSEND   (1 << 2)
-#define RAVA_ZMQ_WRECV   (1 << 3)
+#define RAVA_STATE_START (1 << 0)
+#define RAVA_STATE_READY (1 << 1)
+#define RAVA_STATE_MAIN  (1 << 2)
+#define RAVA_STATE_WAIT  (1 << 3)
+#define RAVA_STATE_JOIN  (1 << 4)
+#define RAVA_STATE_DEAD  (1 << 5)
 
 /* rava states */
 typedef struct rava_state_s  rava_state_t;
@@ -257,6 +234,12 @@ typedef struct rava_const_reg_s {
   const char*   key;
   int           val;
 } rava_const_reg_t;
+
+typedef struct rava_buf_t {
+  size_t   size;
+  uint8_t* head;
+  uint8_t* base;
+} rava_buf_t;
 
 extern luaL_Reg rava_thread_funcs[32];
 extern luaL_Reg rava_thread_meths[32];

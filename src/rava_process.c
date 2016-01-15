@@ -1,4 +1,19 @@
 #include "rava.h"
+#include "rava_common.h"
+
+LUA_API int luaopen_rava_new_cond(lua_State* L);
+LUA_API int luaopen_rava_new_fiber(lua_State* L);
+LUA_API int luaopen_rava_new_idle(lua_State* L);
+LUA_API int luaopen_rava_new_process(lua_State* L);
+LUA_API int luaopen_rava_new_thread(lua_State* L);
+LUA_API int luaopen_rava_new_timer(lua_State* L);
+
+int rava_new_cond(lua_State* L);
+int rava_new_fiber(lua_State* L);
+int rava_new_idle(lua_State* L);
+int rava_new_spawn(lua_State* L);
+int rava_new_thread(lua_State* L);
+int rava_new_timer(lua_State* L);
 
 static void _sleep_cb(uv_timer_t* handle)
 {
@@ -29,16 +44,18 @@ static int rava_process_self(lua_State* L)
 
 static int rava_process_title(lua_State* L)
 {
-	const char* title = luaL_checkstring(L, 1);
+	const char* set = luaL_checkstring(L, 1);
+	char* title = (char*)set;
+	size_t size;
 	register int r;
 
 	if (title) {
-		r	= uv_set_process_title(title);
+		r	= uv_set_process_title(set);
 	} else {
-		r	= uv_get_process_title(title);
+		r	= uv_get_process_title(title, size);
 	}
 
-	if(r < 0)  {
+	if (r < 0)  {
 		return luaL_error(L, uv_strerror(r));
 	}
 
@@ -48,14 +65,29 @@ static int rava_process_title(lua_State* L)
 }
 
 luaL_Reg rava_process_funcs[] = {
-  {"self",        rava_process_self},
-  {"sleep",       rava_process_sleep},
-  {"spawn",       rava_new_process},
-  {"idle",        rava_new_idle},
-  {"fiber",       rava_new_fiber},
-  {"thread",      rava_new_thread},
-  {"conduit",     rava_new_cond},
-  {"timer",       rava_new_timer},
-  {NULL,          NULL}
+  {"self",   rava_process_self},
+  {"sleep",  rava_process_sleep},
+  {"cond",   rava_new_cond},
+  {"fiber",  rava_new_fiber},
+  {"idle",   rava_new_idle},
+  {"spawn",  rava_new_spawn},
+  {"thread", rava_new_thread},
+  {"timer",  rava_new_timer},
+  {NULL,     NULL}
 };
 
+LUA_API int luaopen_rava_process(lua_State* L)
+{
+  ravaL_module(L, RAVA_PROCESS, rava_process_funcs);
+
+	luaopen_rava_new_cond(L);
+	luaopen_rava_new_fiber(L);
+	luaopen_rava_new_idle(L);
+	luaopen_rava_new_process(L);
+	luaopen_rava_new_thread(L);
+	luaopen_rava_new_timer(L);
+
+  lua_pop(L, 6);
+
+  return 1;
+}

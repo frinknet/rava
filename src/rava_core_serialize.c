@@ -7,9 +7,131 @@
 #define RAVA_CODEC_TVAL 2
 #define RAVA_CODEC_TUSR 3
 
+static int encode_table(lua_State* L, rava_buf_t* buf, int seen);
+static int decode_table(lua_State* L, rava_buf_t* buf, int seen);
 
+rava_buf_t* ravaL_buf_new(size_t size)
+{
+  if (!size) size = 128;
+
+  rava_buf_t* buf = (rava_buf_t*)malloc(sizeof(rava_buf_t));
+
+  buf->base = (uint8_t*)malloc(size);
+  buf->size = size;
+  buf->head = buf->base;
+
+  return buf;
+}
+
+void ravaL_buf_close(rava_buf_t* buf)
+{
+  free(buf->base);
+
+  buf->head = NULL;
+  buf->base = NULL;
+  buf->size = 0;
+}
+
+void ravaL_buf_need(rava_buf_t* buf, size_t len)
+{
+  size_t size = buf->size;
+
+  if (!size) {
+    size = 128;
+    buf->base = (uint8_t*)malloc(size);
+    buf->size = size;
+    buf->head = buf->base;
+  }
+
+  ptrdiff_t head = buf->head - buf->base;
+  ptrdiff_t need = head + len;
+
+  while (size < need) size *= 2;
+
+  if (size > buf->size) {
+    buf->base = (uint8_t*)realloc(buf->base, size);
+    buf->size = size;
+    buf->head = buf->base + head;
+  }
+}
+
+void ravaL_buf_init(rava_buf_t* buf, uint8_t* data, size_t len)
+{
+  ravaL_buf_need(buf, len);
+  memcpy(buf->base, data, len);
+
+  buf->head += len;
+}
+
+void ravaL_buf_put(rava_buf_t* buf, uint8_t val)
+{
+  ravaL_buf_need(buf, 1);
+
+  *(buf->head++) = val;
+}
+
+void ravaL_buf_write(rava_buf_t* buf, uint8_t* data, size_t len)
+{
+  ravaL_buf_need(buf, len);
+  memcpy(buf->head, data, len);
+
+  buf->head += len;
+}
+
+void ravaL_buf_write_uleb128(rava_buf_t* buf, uint32_t val)
+{
+  ravaL_buf_need(buf, 5);
+
+  size_t   n = 0;
+  uint8_t* p = buf->head;
+
+  for (; val >= 0x80; val >>= 7) {
+    p[n++] = (uint8_t)((val & 0x7f) | 0x80);
+  }
+
+  p[n++] = (uint8_t)val;
+  buf->head += n;
+}
+
+uint8_t ravaL_buf_get(rava_buf_t* buf)
+{
+  return *(buf->head++);
+}
+
+uint8_t* ravaL_buf_read(rava_buf_t* buf, size_t len)
+{
+  uint8_t* p = buf->head;
+  buf->head += len;
+
+  return p;
+}
+
+uint32_t ravaL_buf_read_uleb128(rava_buf_t* buf)
+{
+  const uint8_t* p = (const uint8_t*)buf->head;
+  uint32_t v = *p++;
+
+  if (v >= 0x80) {
+    int sh = 0;
+    v &= 0x7f;
+
+    do {
+      v |= ((*p & 0x7f) << (sh += 7));
+    } while (*p++ >= 0x80);
+  }
+
+  buf->head = (uint8_t*)p;
+
+  return v;
+}
+
+uint8_t ravaL_buf_peek(rava_buf_t* buf)
+{
+  return *buf->head;
+}
 /* for lua_dump */
-int ravaL_writer(lua_State* L, const char* str, size_t len, void* buf) {
+int ravaL_writer(lua_State* L, const char* str, size_t len, void* buf)
+{
   (void)L;
   ravaL_buf_write((rava_buf_t*)buf, (uint8_t*)str, len);
   return 0;
@@ -37,7 +159,8 @@ int ravaL_writer(lua_State* L, const char* str, size_t len, void* buf) {
   lua_pop(L, 2); \
 } while (0)
 
-static void encode_value(lua_State* L, rava_buf_t* buf, int val, int seen) {
+static void encode_value(lua_State* L, rava_buf_t* buf, int val, int seen)
+{
   size_t len;
   int val_type = lua_type(L, val);
 
@@ -73,8 +196,7 @@ static void encode_value(lua_State* L, rava_buf_t* buf, int val, int seen) {
       ravaL_buf_put(buf, tag);
       ravaL_buf_write_uleb128(buf, (uint32_t)ref);
       lua_pop(L, 1); /* pop ref */
-    }
-    else {
+		} else {
       lua_pop(L, 1); /* pop nil */
       encoder_seen(L, -1, seen);
       if (luaL_getmetafield(L, -1, "__serialize")) {
@@ -159,7 +281,8 @@ static void encode_value(lua_State* L, rava_buf_t* buf, int val, int seen) {
   lua_pop(L, 1);
 }
 
-static int encode_table(lua_State* L, rava_buf_t* buf, int seen) {
+static int encode_table(lua_State* L, rava_buf_t* buf, int seen)
+{
   lua_pushnil(L);
   while (lua_next(L, -2) != 0) {
     int top = lua_gettop(L);
@@ -177,7 +300,8 @@ static int encode_table(lua_State* L, rava_buf_t* buf, int seen) {
   return 1;
 }
 
-static void find_decoder(lua_State* L, rava_buf_t* buf, int seen) {
+static void find_decoder(lua_State* L, rava_buf_t* buf, int seen)
+{
   int i;
   int lookup[2] = {
     LUA_REGISTRYINDEX,
@@ -206,7 +330,8 @@ static void find_decoder(lua_State* L, rava_buf_t* buf, int seen) {
   lua_rawseti(L, seen, ref); \
 } while (0)
 
-static void decode_value(lua_State* L, rava_buf_t* buf, int seen) {
+static void decode_value(lua_State* L, rava_buf_t* buf, int seen)
+{
   uint8_t val_type = ravaL_buf_get(buf);
   size_t  len;
   switch (val_type) {
@@ -291,7 +416,7 @@ static void decode_value(lua_State* L, rava_buf_t* buf, int seen) {
     break;
   }
   case LUA_TLIGHTUSERDATA: {
-    uint8_t* ptr = ravaL_buf_read(buf, sizeof(void*));
+    uint8_t* ptr = (uint8_t*)ravaL_buf_read(buf, sizeof(void*));
     lua_pushlightuserdata(L, *(void**)ptr);
     break;
   }
@@ -304,7 +429,8 @@ static void decode_value(lua_State* L, rava_buf_t* buf, int seen) {
   }
 }
 
-static int decode_table(lua_State* L, rava_buf_t* buf, int seen) {
+static int decode_table(lua_State* L, rava_buf_t* buf, int seen)
+{
   for (;ravaL_buf_peek(buf) != LUA_TNIL;) {
     decode_value(L, buf, seen);
     decode_value(L, buf, seen);
@@ -318,9 +444,13 @@ static int decode_table(lua_State* L, rava_buf_t* buf, int seen) {
   return 1;
 }
 
-int ravaL_serialize_encode(lua_State* L, int narg) {
+int ravaL_serialize_encode(lua_State* L, int narg)
+{
   int i, base, seen;
-  rava_buf_t buf; buf.base = NULL; buf.head = NULL; buf.size = 0;
+  rava_buf_t buf;
+	buf.base = NULL;
+	buf.head = NULL;
+	buf.size = 0;
 
   base = lua_gettop(L) - narg + 1;
 
@@ -343,12 +473,16 @@ int ravaL_serialize_encode(lua_State* L, int narg) {
   return 1;
 }
 
-int ravaL_serialize_decode(lua_State* L) {
+int ravaL_serialize_decode(lua_State* L)
+{
   size_t len;
   int nval, seen, i;
   int top = lua_gettop(L);
 
-  rava_buf_t buf; buf.base = NULL; buf.head = NULL; buf.size = 0;
+  rava_buf_t buf;
+	buf.base = NULL;
+	buf.head = NULL;
+	buf.size = 0;
 
   const char* data = luaL_checklstring(L, 1, &len);
   ravaL_buf_init(&buf, (uint8_t*)data, len);

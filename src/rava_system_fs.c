@@ -6,8 +6,8 @@
 #endif
 
 #include "rava.h"
+#include "rava_common.h"
 
-/* lifted from ravait */
 static int _string_to_flags(lua_State* L, const char* str)
 {
   if (strcmp(str, "r") == 0)
@@ -26,7 +26,6 @@ static int _string_to_flags(lua_State* L, const char* str)
   return luaL_error(L, "Unknown file open flag: '%s'", str);
 }
 
-/* lifted from ravait */
 static void _push_stats_table(lua_State* L, struct stat* s)
 {
   lua_newtable(L);
@@ -76,8 +75,40 @@ static void _push_stats_table(lua_State* L, struct stat* s)
 #endif
 }
 
-/* the rest of this file is mostly stolen from ravait - key difference is that
-** we don't run Lua callbacks, but instead suspend and resume Lua threads */
+#define RAVA_FS_CALL(L, func, misc, ...) \
+	do { \
+    rava_state_t* curr = ravaL_state_self(L); \
+    uv_loop_t*   loop = ravaL_event_loop(L); \
+    uv_fs_t*     req; \
+    uv_fs_cb     cb; \
+    req = &curr->req.fs; \
+		\
+    if (curr->type == RAVA_TTHREAD) { \
+      /* synchronous in main */ \
+      cb = NULL; \
+		} else { \
+      cb = rava_system_fs_cb; \
+    } \
+    req->data = misc; \
+    \
+		int r = uv_fs_##func(loop, req, __VA_ARGS__, cb); \
+		\
+    if (r < 0) { \
+      lua_settop(L, 0); \
+      lua_pushboolean(L, 0); \
+      lua_pushstring(L, uv_strerror(r)); \
+    } \
+		\
+    if (curr->type == RAVA_TTHREAD) { \
+      rava_system_fs_result(L, req); \
+			\
+      return lua_gettop(L); \
+		} else { \
+      TRACE("suspending...\n"); \
+			\
+      return ravaL_state_suspend(curr); \
+    } \
+  } while(0)
 
 static void rava_system_fs_result(lua_State* L, uv_fs_t* req)
 {
@@ -110,7 +141,7 @@ static void rava_system_fs_result(lua_State* L, uv_fs_t* req)
 
       case UV_FS_OPEN:
         {
-          rava_object_t* self = (rava_object_t*)luaL_checkudata(L, -1, RAVA_FILE_T);
+          rava_object_t* self = (rava_object_t*)luaL_checkudata(L, -1, RAVA_SYSTEM_FILE);
           self->h.file = req->result;
         }
 
@@ -175,41 +206,6 @@ static void rava_system_fs_cb(uv_fs_t* req)
   ravaL_state_ready(state);
 }
 
-#define RAVA_FS_CALL(L, func, misc, ...) \
-	do { \
-    rava_state_t* curr = ravaL_state_self(L); \
-    uv_loop_t*   loop = ravaL_event_loop(L); \
-    uv_fs_t*     req; \
-    uv_fs_cb     cb; \
-    req = &curr->req.fs; \
-		\
-    if (curr->type == RAVA_TTHREAD) { \
-      /* synchronous in main */ \
-      cb = NULL; \
-		} else { \
-      cb = rava_system_fs_cb; \
-    } \
-    req->data = misc; \
-    \
-		int r = uv_fs_##func(loop, req, __VA_ARGS__, cb); \
-		\
-    if (r < 0) { \
-      lua_settop(L, 0); \
-      lua_pushboolean(L, 0); \
-      lua_pushstring(L, uv_strerror(r)); \
-    } \
-		\
-    if (curr->type == RAVA_TTHREAD) { \
-      rava_system_fs_result(L, req); \
-			\
-      return lua_gettop(L); \
-		} else { \
-      TRACE("suspending...\n"); \
-			\
-      return ravaL_state_suspend(curr); \
-    } \
-  } while(0)
-
 static int rava_system_fs_open(lua_State* L)
 {
   rava_state_t*  curr = ravaL_state_self(L);
@@ -223,7 +219,7 @@ static int rava_system_fs_open(lua_State* L)
 
   self = (rava_object_t*)lua_newuserdata(L, sizeof(rava_object_t));
 
-  luaL_getmetatable(L, RAVA_FILE_T);
+  luaL_getmetatable(L, RAVA_SYSTEM_FILE);
   lua_setmetatable(L, -2);
   ravaL_object_init(curr, self);
 
@@ -284,8 +280,8 @@ static int rava_system_fs_rename(lua_State* L)
 
 static int rava_system_fs_sendfile(lua_State* L)
 {
-  rava_object_t* o_file = (rava_object_t*)luaL_checkudata(L, 1, RAVA_FILE_T);
-  rava_object_t* i_file = (rava_object_t*)luaL_checkudata(L, 2, RAVA_FILE_T);
+  rava_object_t* o_file = (rava_object_t*)luaL_checkudata(L, 1, RAVA_SYSTEM_FILE);
+  rava_object_t* i_file = (rava_object_t*)luaL_checkudata(L, 2, RAVA_SYSTEM_FILE);
   off_t  ofs = luaL_checkint(L, 3);
   size_t len = luaL_checkint(L, 4);
 
@@ -383,7 +379,8 @@ static int rava_system_fs_chdir(lua_State* L)
   return 0;
 }
 
-static int rava_system_fs_exepath(lua_State* L) {
+static int rava_system_fs_exepath(lua_State* L)
+{
   char buffer[RAVA_MAX_PATH];
   size_t len = RAVA_MAX_PATH;
 
@@ -403,6 +400,119 @@ static int rava_system_fs_home(lua_State* L)
   }
 
   lua_pushstring(L, dir);
+
+  return 1;
+}
+
+static int rava_system_file_stat(lua_State* L)
+{
+  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_SYSTEM_FILE);
+
+  lua_settop(L, 0);
+  RAVA_FS_CALL(L, fstat, NULL, self->h.file);
+}
+
+static int rava_system_file_sync(lua_State* L)
+{
+  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_SYSTEM_FILE);
+
+  lua_settop(L, 0);
+  RAVA_FS_CALL(L, fsync, NULL, self->h.file);
+}
+
+static int rava_system_file_datasync(lua_State* L)
+{
+  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_SYSTEM_FILE);
+
+  lua_settop(L, 0);
+  RAVA_FS_CALL(L, fdatasync, NULL, self->h.file);
+}
+
+static int rava_system_file_truncate(lua_State* L)
+{
+  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_SYSTEM_FILE);
+  off_t ofs = luaL_checkint(L, 2);
+
+  lua_settop(L, 0);
+  RAVA_FS_CALL(L, ftruncate, NULL, self->h.file, ofs);
+}
+
+static int rava_system_file_utime(lua_State* L)
+{
+  const char* path = luaL_checkstring(L, 1);
+  double atime = luaL_checknumber(L, 2);
+  double mtime = luaL_checknumber(L, 3);
+
+  lua_settop(L, 0);
+
+  RAVA_FS_CALL(L, utime, NULL, path, atime, mtime);
+}
+
+static int rava_system_file_chmod(lua_State* L)
+{
+  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_SYSTEM_FILE);
+  int mode = strtoul(luaL_checkstring(L, 2), NULL, 8);
+
+  lua_settop(L, 0);
+  RAVA_FS_CALL(L, fchmod, NULL, self->h.file, mode);
+}
+
+static int rava_system_file_chown(lua_State* L)
+{
+  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_SYSTEM_FILE);
+  int uid = luaL_checkint(L, 2);
+  int gid = luaL_checkint(L, 3);
+
+  lua_settop(L, 0);
+  RAVA_FS_CALL(L, fchown, NULL, self->h.file, uid, gid);
+}
+
+static int rava_system_file_read(lua_State *L)
+{
+  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_SYSTEM_FILE);
+
+  size_t  len = luaL_optint(L, 2, RAVA_BUF_SIZE);
+  int64_t ofs = luaL_optint(L, 3, -1);
+  void*   buf = malloc(len); /* free from ctx->req.fs_req.data in cb */
+
+  lua_settop(L, 0);
+  RAVA_FS_CALL(L, read, buf, self->h.file, buf, len, ofs);
+}
+
+static int rava_system_file_write(lua_State *L)
+{
+  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_SYSTEM_FILE);
+
+  size_t   len;
+  void*    buf = (void*)luaL_checklstring(L, 2, &len);
+  uint64_t ofs = luaL_optint(L, 3, 0);
+
+  lua_settop(L, 0);
+  RAVA_FS_CALL(L, write, NULL, self->h.file, buf, len, ofs);
+}
+
+static int rava_system_file_close(lua_State *L)
+{
+  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_SYSTEM_FILE);
+
+  lua_settop(L, 0);
+  RAVA_FS_CALL(L, close, NULL, self->h.file);
+}
+
+static int rava_system_file_free(lua_State *L)
+{
+  rava_object_t* self = (rava_object_t*)lua_touserdata(L, 1);
+
+  if (self->data) free(self->data);
+
+  return 0;
+}
+
+static int rava_system_file_tostring(lua_State *L)
+{
+  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_SYSTEM_FILE);
+
+  lua_pushfstring(L, "userdata<%s>: %p", RAVA_SYSTEM_FILE, self);
 
   return 1;
 }
@@ -429,3 +539,28 @@ luaL_Reg rava_system_fs_funcs[] = {
   {"home",        rava_system_fs_home},
   {NULL,          NULL}
 };
+
+luaL_Reg rava_system_file_meths[] = {
+  {"read",      rava_system_file_read},
+  {"write",     rava_system_file_write},
+  {"close",     rava_system_file_close},
+  {"stat",      rava_system_file_stat},
+  {"sync",      rava_system_file_sync},
+  {"utime",     rava_system_file_utime},
+  {"chmod",     rava_system_file_chmod},
+  {"chown",     rava_system_file_chown},
+  {"datasync",  rava_system_file_datasync},
+  {"truncate",  rava_system_file_truncate},
+  {"__gc",      rava_system_file_free},
+  {"__tostring",rava_system_file_tostring},
+  {NULL,        NULL}
+};
+
+LUA_API int loaopen_rava_system_fs(lua_State* L)
+{
+  ravaL_module(L, RAVA_SYSTEM_FS,  rava_system_fs_funcs);
+  ravaL_class(L, RAVA_SYSTEM_FILE, rava_system_file_meths);
+  lua_pop(L, 1);
+
+  return 1;
+}

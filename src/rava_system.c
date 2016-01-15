@@ -1,19 +1,8 @@
+#include "rava.h"
+#include "rava_common.h"
 #include <stdio.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include "lua.h"
-#include "lualib.h"
-#include "lauxlib.h"
-
-#ifdef __cplusplus
-}
-#endif
-
-
-#include "rava.h"
+LUA_API int luaopen_system_fs(lua_State* L);
 
 static int rava_system_cpus(lua_State* L)
 {
@@ -41,8 +30,6 @@ static int rava_system_cpus(lua_State* L)
     lua_pushinteger(L, (lua_Integer)info[i].speed);
     lua_setfield(L, -2, "speed");
 
-    lua_newtable(L); /* times */
-
     lua_pushinteger(L, (lua_Integer)info[i].cpu_times.user);
     lua_setfield(L, -2, "user");
 
@@ -58,8 +45,6 @@ static int rava_system_cpus(lua_State* L)
     lua_pushinteger(L, (lua_Integer)info[i].cpu_times.irq);
     lua_setfield(L, -2, "irq");
 
-    lua_setfield(L, -2, "times");
-
     lua_rawseti(L, 1, i + 1);
   }
 
@@ -68,17 +53,17 @@ static int rava_system_cpus(lua_State* L)
   return 1;
 }
 
-static int rava_system_load(lua_State* L) {
-	double loadavg;
-	register int r = uv_loadavg(&loadavg);
+static int rava_system_load(lua_State* L)
+{
+	double loadavg[3];
 
-	if(r < 0) {
-		return luaL_error(L, uv_strerror(r));
-	}
+	uv_loadavg(loadavg);
 
-	lua_pushnumber(L, loadavg);
+	lua_pushnumber(L, loadavg[0]);
+	lua_pushnumber(L, loadavg[1]);
+	lua_pushnumber(L, loadavg[2]);
 
-	return 1;
+	return 3;
 }
 
 static int rava_system_memory(lua_State* L)
@@ -147,7 +132,8 @@ static int rava_system_timecode(lua_State* L)
   return 1;
 }
 
-static int rava_system_uptime(lua_State* L) {
+static int rava_system_uptime(lua_State* L)
+{
 	double uptime;
 	register int r = uv_uptime(&uptime);
 
@@ -171,7 +157,6 @@ static int rava_system_unserialize(lua_State* L)
 }
 
 luaL_Reg rava_system_funcs[] = {
-  {"fs",          rava_system_fs},
   {"cpus",        rava_system_cpus},
   {"load",        rava_system_load},
   {"memory",      rava_system_memory},
@@ -182,3 +167,38 @@ luaL_Reg rava_system_funcs[] = {
   {"unserialize", rava_system_unserialize},
   {NULL,          NULL}
 };
+
+LUA_API int luaopen_rava_system(lua_State* L)
+{
+  ravaL_module(L, RAVA_SYSTEM, rava_system_funcs);
+
+	luaopen_rava_system_fs(L);
+  lua_pop(L, 1);
+
+  /* rava.std{in,out,err} */
+  uv_loop_t* loop = ravaL_event_loop(L);
+  rava_state_t* curr = ravaL_state_self(L);
+  const char* stdfhs[] = { "stdin", "stdout", "stderr" };
+	int i;
+
+  for (i = 0; i < 3; i++) {
+#ifdef WIN32
+    const uv_file fh = GetStdHandle(i == 0 ? STD_INPUT_HANDLE
+     : (i == 1 ? STD_OUTPUT_HANDLE : STD_ERROR_HANDLE));
+#else
+    const uv_file fh = i;
+#endif
+    rava_object_t* stdfh = (rava_object_t*)lua_newuserdata(L, sizeof(rava_object_t));
+
+    luaL_getmetatable(L, RAVA_SOCKET_PIPE);
+    lua_setmetatable(L, -2);
+    ravaL_object_init(curr, stdfh);
+    uv_pipe_init(loop, &stdfh->h.pipe, 0);
+    uv_pipe_open(&stdfh->h.pipe, fh);
+    lua_pushvalue(L, -1);
+    lua_setfield(L, LUA_REGISTRYINDEX, stdfhs[i]);
+    lua_setfield(L, -2, stdfhs[i]);
+  }
+
+  return 1;
+}

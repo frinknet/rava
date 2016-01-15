@@ -1,4 +1,17 @@
 #include "rava.h"
+#include "rava_common.h"
+
+int rava_new_cond(lua_State* L)
+{
+  rava_cond_t* cond = (rava_cond_t*)lua_newuserdata(L, sizeof(rava_cond_t));
+
+  lua_pushvalue(L, 1);
+  luaL_getmetatable(L, RAVA_PROCESS_COND);
+  lua_setmetatable(L, -2);
+  ravaL_cond_init(cond);
+
+  return 1;
+}
 
 int ravaL_cond_init(rava_cond_t* cond)
 {
@@ -55,25 +68,13 @@ int ravaL_cond_broadcast(rava_cond_t* cond)
   return roused;
 }
 
-static int rava_new_cond(lua_State* L)
-{
-  rava_cond_t* cond = (rava_cond_t*)lua_newuserdata(L, sizeof(rava_cond_t));
-
-  lua_pushvalue(L, 1);
-  luaL_getmetatable(L, RAVA_COND_T);
-  lua_setmetatable(L, -2);
-  ravaL_cond_init(cond);
-
-  return 1;
-}
-
 static int rava_cond_wait(lua_State *L)
 {
   rava_cond_t*  cond  = (rava_cond_t*)lua_touserdata(L, 1);
   rava_state_t* curr;
 
   if (!lua_isnoneornil(L, 2)) {
-    curr = (rava_state_t*)luaL_checkudata(L, 2, RAVA_FIBER_T);
+    curr = (rava_state_t*)luaL_checkudata(L, 2, RAVA_PROCESS_FIBER);
 	} else {
     curr = (rava_state_t*)ravaL_state_self(L);
   }
@@ -109,8 +110,8 @@ static int rava_cond_free(lua_State *L)
 
 static int rava_cond_tostring(lua_State *L)
 {
-  rava_cond_t* cond = (rava_cond_t*)luaL_checkudata(L, 1, RAVA_COND_T);
-  lua_pushfstring(L, "userdata<%s>: %p", RAVA_COND_T, cond);
+  rava_cond_t* cond = (rava_cond_t*)luaL_checkudata(L, 1, RAVA_PROCESS_COND);
+  lua_pushfstring(L, "userdata<%s>: %p", RAVA_PROCESS_COND, cond);
 
   return 1;
 }
@@ -123,3 +124,12 @@ luaL_Reg rava_cond_meths[] = {
   {"__tostring",rava_cond_tostring},
   {NULL,        NULL}
 };
+
+LUA_API int luaopen_rava_process_cond(lua_State* L)
+{
+  ravaL_class(L, RAVA_PROCESS_COND, rava_cond_meths);
+  lua_pop(L, 1);
+	lua_pushcfunction(L, rava_new_cond);
+
+  return 1;
+}

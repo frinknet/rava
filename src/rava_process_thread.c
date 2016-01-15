@@ -1,11 +1,12 @@
 #include "rava.h"
+#include "rava_common.h"
 
 void ravaL_thread_ready(rava_thread_t* self)
 {
-  if (!(self->flags & RAVA_FREADY)) {
+  if (!(self->flags & RAVA_STATE_READY)) {
     TRACE("SET READY\n");
 
-    self->flags |= RAVA_FREADY;
+    self->flags |= RAVA_STATE_READY;
 
     uv_async_send(&self->async);
   }
@@ -28,8 +29,8 @@ int ravaL_thread_yield(rava_thread_t* self, int narg)
 
 int ravaL_thread_suspend(rava_thread_t* self)
 {
-  if (self->flags & RAVA_FREADY) {
-    self->flags &= ~RAVA_FREADY;
+  if (self->flags & RAVA_STATE_READY) {
+    self->flags &= ~RAVA_STATE_READY;
 
     int active = 0;
 
@@ -42,7 +43,7 @@ int ravaL_thread_suspend(rava_thread_t* self)
 
       TRACE("uv_run_once returned, active: %i\n", active);
 
-      if (self->flags & RAVA_FREADY) {
+      if (self->flags & RAVA_STATE_READY) {
         TRACE("main ready, breaking\n");
 
         break;
@@ -52,7 +53,7 @@ int ravaL_thread_suspend(rava_thread_t* self)
     TRACE("back in main\n");
 
     /* nothing left to do, back in main */
-    self->flags |= RAVA_FREADY;
+    self->flags |= RAVA_STATE_READY;
   }
 
   return lua_gettop(self->L);
@@ -128,7 +129,7 @@ int ravaL_thread_once(rava_thread_t* self)
 
     TRACE("[%p] rouse fiber: %p\n", self, fiber);
 
-    if (fiber->flags & RAVA_FDEAD) {
+    if (fiber->flags & RAVA_STATE_DEAD) {
       TRACE("[%p] fiber is dead: %p\n", self, fiber);
 
       luaL_error(self->L, "cannot resume a dead fiber");
@@ -136,9 +137,9 @@ int ravaL_thread_once(rava_thread_t* self)
       int stat, narg;
       narg = lua_gettop(fiber->L);
 
-      if (!(fiber->flags & RAVA_FSTART)) {
+      if (!(fiber->flags & RAVA_STATE_START)) {
         /* first entry, ignore function arg */
-        fiber->flags |= RAVA_FSTART;
+        fiber->flags |= RAVA_STATE_START;
 
         --narg;
       }
@@ -158,7 +159,7 @@ int ravaL_thread_once(rava_thread_t* self)
           TRACE("[%p] seen LUA_YIELD\n", self);
 
           /* if called via coroutine.yield() then we're still in the queue */
-          if (fiber->flags & RAVA_FREADY) {
+          if (fiber->flags & RAVA_STATE_READY) {
             TRACE("%p is still ready, back in the queue\n", fiber);
 
             QUEUE_INSERT_TAIL(&self->rouse, &fiber->queue);
@@ -235,11 +236,11 @@ void ravaL_thread_init_main(lua_State* L)
 {
   rava_thread_t* self = (rava_thread_t*)lua_newuserdata(L, sizeof(rava_thread_t));
 
-  luaL_getmetatable(L, RAVA_THREAD_T);
+  luaL_getmetatable(L, RAVA_PROCESS_THREAD);
   lua_setmetatable(L, -2);
 
   self->type  = RAVA_TTHREAD;
-  self->flags = RAVA_FREADY;
+  self->flags = RAVA_STATE_READY;
   self->loop  = uv_default_loop();
   self->curr  = (rava_state_t*)self;
   self->L     = L;
@@ -283,7 +284,7 @@ static void _thread_enter(void* arg)
     lua_insert(self->L, 1);
   }
 
-  self->flags |= RAVA_FDEAD;
+  self->flags |= RAVA_STATE_DEAD;
 }
 
 rava_thread_t* ravaL_thread_create(rava_state_t* outer, int narg)
@@ -295,12 +296,12 @@ rava_thread_t* ravaL_thread_create(rava_state_t* outer, int narg)
   base = lua_gettop(L) - narg + 1;
   rava_thread_t* self = (rava_thread_t*)lua_newuserdata(L, sizeof(rava_thread_t));
 
-  luaL_getmetatable(L, RAVA_THREAD_T);
+  luaL_getmetatable(L, RAVA_PROCESS_THREAD);
   lua_setmetatable(L, -2);
   lua_insert(L, base++);
 
   self->type  = RAVA_TTHREAD;
-  self->flags = RAVA_FREADY;
+  self->flags = RAVA_STATE_READY;
   self->loop  = uv_loop_new();
   self->curr  = (rava_state_t*)self;
   self->L     = luaL_newstate();
@@ -349,7 +350,7 @@ static int rava_new_thread(lua_State* L)
 
 static int rava_thread_join(lua_State* L)
 {
-  rava_thread_t* self = (rava_thread_t*)luaL_checkudata(L, 1, RAVA_THREAD_T);
+  rava_thread_t* self = (rava_thread_t*)luaL_checkudata(L, 1, RAVA_PROCESS_THREAD);
   rava_thread_t* curr = ravaL_thread_self(L);
 
   ravaL_thread_ready(self);
@@ -381,16 +382,11 @@ static int rava_thread_free(lua_State* L)
 }
 
 static int rava_thread_tostring(lua_State* L) {
-  rava_thread_t* self = (rava_thread_t*)luaL_checkudata(L, 1, RAVA_THREAD_T);
-  lua_pushfstring(L, "userdata<%s>: %p", RAVA_THREAD_T, self);
+  rava_thread_t* self = (rava_thread_t*)luaL_checkudata(L, 1, RAVA_PROCESS_THREAD);
+  lua_pushfstring(L, "userdata<%s>: %p", RAVA_PROCESS_THREAD, self);
 
   return 1;
 }
-
-luaL_Reg rava_thread_funcs[] = {
-  {"spawn",     rava_new_thread},
-  {NULL,        NULL}
-};
 
 luaL_Reg rava_thread_meths[] = {
   {"join",      rava_thread_join},
@@ -398,3 +394,12 @@ luaL_Reg rava_thread_meths[] = {
   {"__tostring",rava_thread_tostring},
   {NULL,        NULL}
 };
+
+LUA_API int luaopen_rava_process_thread(lua_State* L)
+{
+  ravaL_class(L, RAVA_PROCESS_THREAD, rava_thread_meths);
+  lua_pop(L, 1);
+	lua_pushcfunction(L, rava_new_thread);
+
+  return 1;
+}

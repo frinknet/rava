@@ -1,19 +1,20 @@
 #include "rava.h"
+#include "rava_common.h"
 
 void ravaL_fiber_close(rava_fiber_t* fiber) {
-  if (fiber->flags & RAVA_FDEAD) return;
+  if (fiber->flags & RAVA_STATE_DEAD) return;
 
   lua_pushthread(fiber->L);
   lua_pushnil(fiber->L);
   lua_settable(fiber->L, LUA_REGISTRYINDEX);
 
-  fiber->flags |= RAVA_FDEAD;
+  fiber->flags |= RAVA_STATE_DEAD;
 }
 
 void ravaL_fiber_ready(rava_fiber_t* fiber) {
-  if (!(fiber->flags & RAVA_FREADY)) {
+  if (!(fiber->flags & RAVA_STATE_READY)) {
     TRACE("insert fiber %p into queue of %p\n", fiber, ravaL_thread_self(fiber->L));
-    fiber->flags |= RAVA_FREADY;
+    fiber->flags |= RAVA_STATE_READY;
     ravaL_thread_enqueue(ravaL_thread_self(fiber->L), fiber);
   }
 }
@@ -22,11 +23,11 @@ int ravaL_fiber_yield(rava_fiber_t* self, int narg) {
   return lua_yield(self->L, narg);
 }
 int ravaL_fiber_suspend(rava_fiber_t* self) {
-  TRACE("FIBER SUSPEND - READY? %i\n", self->flags & RAVA_FREADY);
-  if (self->flags & RAVA_FREADY) {
-    self->flags &= ~RAVA_FREADY;
+  TRACE("FIBER SUSPEND - READY? %i\n", self->flags & RAVA_STATE_READY);
+  if (self->flags & RAVA_STATE_READY) {
+    self->flags &= ~RAVA_STATE_READY;
     if (!ravaL_state_is_active((rava_state_t*)self)) {
-      ngx_queue_remove(&self->queue);
+      QUEUE_REMOVE(&self->queue);
     }
     TRACE("about to yield...\n");
     return lua_yield(self->L, lua_gettop(self->L)); /* keep our stack */
@@ -54,7 +55,7 @@ rava_fiber_t* ravaL_fiber_create(rava_state_t* outer, int narg) {
   lua_xmove(L, L1, narg);                          /* [thread] */
 
   self = (rava_fiber_t*)lua_newuserdata(L, sizeof(rava_fiber_t));
-  luaL_getmetatable(L, RAVA_FIBER_T);               /* [thread, fiber, meta] */
+  luaL_getmetatable(L, RAVA_PROCESS_FIBER);               /* [thread, fiber, meta] */
   lua_setmetatable(L, -2);                         /* [thread, fiber] */
 
   lua_pushvalue(L, -1);                            /* [thread, fiber, fiber] */
@@ -71,8 +72,8 @@ rava_fiber_t* ravaL_fiber_create(rava_state_t* outer, int narg) {
   self->loop  = outer->loop;
 
   /* fibers waiting for us to finish */
-  ngx_queue_init(&self->rouse);
-  ngx_queue_init(&self->queue);
+  QUEUE_INIT(&self->rouse);
+  QUEUE_INIT(&self->queue);
 
   return self;
 }
@@ -98,16 +99,16 @@ int ravaL_state_xcopy(rava_state_t* a, rava_state_t* b) {
 }
 
 static int rava_fiber_join(lua_State* L) {
-  rava_fiber_t* self = (rava_fiber_t*)luaL_checkudata(L, 1, RAVA_FIBER_T);
+  rava_fiber_t* self = (rava_fiber_t*)luaL_checkudata(L, 1, RAVA_PROCESS_FIBER);
   rava_state_t* curr = (rava_state_t*)ravaL_state_self(L);
   TRACE("joining fiber[%p], from [%p]\n", self, curr);
   assert((rava_state_t*)self != curr);
-  if (self->flags & RAVA_FDEAD) {
+  if (self->flags & RAVA_STATE_DEAD) {
     /* seen join after termination */
     TRACE("join after termination\n");
     return ravaL_state_xcopy((rava_state_t*)self, curr);
   }
-  ngx_queue_insert_tail(&self->rouse, &curr->join);
+  QUEUE_INSERT_TAIL(&self->rouse, &curr->join);
   ravaL_fiber_ready(self);
   TRACE("calling ravaL_state_suspend on %p\n", curr);
   if (curr->type == RAVA_TFIBER) {
@@ -131,14 +132,9 @@ static int rava_fiber_free(lua_State* L) {
 }
 static int rava_fiber_tostring(lua_State* L) {
   rava_fiber_t* self = (rava_fiber_t*)lua_touserdata(L, 1);
-  lua_pushfstring(L, "userdata<%s>: %p", RAVA_FIBER_T, self);
+  lua_pushfstring(L, "userdata<%s>: %p", RAVA_PROCESS_FIBER, self);
   return 1;
 }
-
-luaL_Reg rava_fiber_funcs[] = {
-  {"create",    rava_new_fiber},
-  {NULL,        NULL}
-};
 
 luaL_Reg rava_fiber_meths[] = {
   {"join",      rava_fiber_join},
@@ -149,3 +145,16 @@ luaL_Reg rava_fiber_meths[] = {
 };
 
 
+LUA_API int luaopen_rava_process_fiber(lua_State* L)
+{
+  ravaL_class(L, RAVA_PROCESS, rava_fiber_meths);
+  /* borrow coroutine.yield (fast on LJ2) */
+  lua_getglobal(L, "coroutine");
+  lua_getfield(L, -1, "yield");
+  lua_setfield(L, -3, "yield");
+  lua_pop(L, 1); /* coroutine */
+
+	lua_pushcfunction(L, rava_new_fiber);
+
+  return 1;
+}

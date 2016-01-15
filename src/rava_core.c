@@ -1,3 +1,5 @@
+#include "rava.h"
+
 #include <stdio.h>
 
 #ifdef __cplusplus
@@ -11,9 +13,6 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
-
-
-#include "rava.h"
 
 static int MAIN_INITIALIZED = 0;
 

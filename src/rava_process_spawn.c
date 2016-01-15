@@ -1,4 +1,5 @@
 #include "rava.h"
+#include "rava_common.h"
 
 void _exit_cb(uv_process_t* handle, int64_t status, int sigterm)
 {
@@ -28,7 +29,7 @@ void _exit_cb(uv_process_t* handle, int64_t status, int sigterm)
   })
 */
 
-static int rava_new_process(lua_State* L)
+static int rava_new_spawn(lua_State* L)
 {
   const char* cmd = luaL_checkstring(L, 1);
   size_t argc;
@@ -117,7 +118,7 @@ static int rava_new_process(lua_State* L)
     if (lua_isnil(L, -1)) {
       stdio[i].flags = UV_IGNORE;
     } else {
-      rava_object_t* obj = (rava_object_t*)luaL_checkudata(L, -1, RAVA_PIPE_T);
+      rava_object_t* obj = (rava_object_t*)luaL_checkudata(L, -1, RAVA_SOCKET_PIPE);
       stdio[i].flags = UV_INHERIT_STREAM;
       stdio[i].data.stream = &obj->h.stream;
     }
@@ -140,7 +141,7 @@ static int rava_new_process(lua_State* L)
   rava_state_t*  curr = ravaL_state_self(L);
   rava_object_t* self = (rava_object_t*)lua_newuserdata(L, sizeof(rava_object_t));
 
-  luaL_getmetatable(L, RAVA_PROCESS_T);
+  luaL_getmetatable(L, RAVA_PROCESS_SPAWN);
   lua_setmetatable(L, -2);
 
   ravaL_object_init(curr, self);
@@ -167,9 +168,9 @@ static int rava_new_process(lua_State* L)
   }
 }
 
-static int rava_process_kill(lua_State* L)
+static int rava_spawn_kill(lua_State* L)
 {
-  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_PROCESS_T);
+  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_PROCESS_SPAWN);
   int signum = luaL_checkint(L, 2);
 	int r = uv_process_kill(&self->h.process, signum);
 
@@ -180,23 +181,32 @@ static int rava_process_kill(lua_State* L)
   return 0;
 }
 
-static int rava_process_free(lua_State* L)
+static int rava_spawn_free(lua_State* L)
 {
   rava_object_t* self = (rava_object_t*)lua_touserdata(L, 1);
   ravaL_object_close(self);
   return 0;
 }
 
-static int rava_process_tostring(lua_State* L)
+static int rava_spawn_tostring(lua_State* L)
 {
-  rava_object_t *self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_PROCESS_T);
-  lua_pushfstring(L, "userdata<%s>: %p", RAVA_PROCESS_T, self);
+  rava_object_t *self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_PROCESS_SPAWN);
+  lua_pushfstring(L, "userdata<%s>: %p", RAVA_PROCESS_SPAWN, self);
   return 1;
 }
 
-luaL_Reg rava_process_meths[] = {
-  {"kill",        rava_process_kill},
-  {"__gc",        rava_process_free},
-  {"__tostring",  rava_process_tostring},
+luaL_Reg rava_spawn_meths[] = {
+  {"kill",        rava_spawn_kill},
+  {"__gc",        rava_spawn_free},
+  {"__tostring",  rava_spawn_tostring},
   {NULL,          NULL}
 };
+
+LUA_API int luaopen_rava_process_spawn(lua_State* L)
+{
+  ravaL_class(L, RAVA_PROCESS_SPAWN, rava_spawn_meths);
+  lua_pop(L, 1);
+	lua_pushcfunction(L, rava_new_spawn);
+
+  return 1;
+}

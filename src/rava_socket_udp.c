@@ -1,21 +1,23 @@
 #include "rava.h"
+#include "rava_common.h"
 #include <string.h>
 
-static int rava_new_udp(lua_State* L)
+int rava_new_udp(lua_State* L)
 {
   rava_state_t*  curr = ravaL_state_self(L);
   rava_object_t* self = (rava_object_t*)lua_newuserdata(L, sizeof(rava_object_t));
-  luaL_getmetatable(L, RAVA_NET_UDP_T);
+  luaL_getmetatable(L, RAVA_SOCKET_UDP);
   lua_setmetatable(L, -2);
   ravaL_object_init(curr, self);
 
   uv_udp_init(ravaL_event_loop(L), &self->h.udp);
+
   return 1;
 }
 
 static int rava_udp_bind(lua_State* L)
 {
-  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_NET_UDP_T);
+  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_SOCKET_UDP);
   const char*   host = luaL_checkstring(L, 2);
   int           port = luaL_checkint(L, 3);
 
@@ -42,7 +44,7 @@ static void _send_cb(uv_udp_send_t* req, int status)
 
 static int rava_udp_send(lua_State* L)
 {
-  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_NET_UDP_T);
+  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_SOCKET_UDP);
   rava_state_t*  curr = ravaL_state_self(L);
 
   size_t len;
@@ -107,7 +109,7 @@ static void _recv_cb(uv_udp_t* handle, ssize_t nread, const uv_buf_t* buf,
 
 static int rava_udp_recv(lua_State* L)
 {
-  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_NET_UDP_T);
+  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_SOCKET_UDP);
   if (!ravaL_object_is_started(self)) {
     self->flags |= RAVA_OSTARTED;
 
@@ -120,7 +122,7 @@ static const char* RAVA_UDP_MEMBERSHIP_OPTS[] = { "join", "leave", NULL };
 
 int rava_udp_membership(lua_State* L)
 {
-  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_NET_UDP_T);
+  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_SOCKET_UDP);
   const char*  iaddr = luaL_checkstring(L, 3);
   const char*  maddr = luaL_checkstring(L, 2);
 
@@ -146,8 +148,8 @@ static int rava_udp_free(lua_State *L)
 
 static int rava_udp_tostring(lua_State *L)
 {
-  rava_object_t *self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_NET_UDP_T);
-  lua_pushfstring(L, "userdata<%s>: %p", RAVA_NET_UDP_T, self);
+  rava_object_t *self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_SOCKET_UDP);
+  lua_pushfstring(L, "userdata<%s>: %p", RAVA_SOCKET_UDP, self);
 
   return 1;
 }
@@ -161,3 +163,14 @@ luaL_Reg rava_udp_meths[] = {
   {"__tostring", rava_udp_tostring},
   {NULL,         NULL}
 };
+
+LUA_API int loaopen_rava_socket_udp(lua_State* L)
+{
+  ravaL_class(L, RAVA_SOCKET_UDP, rava_stream_meths);
+  luaL_register(L, NULL, rava_udp_meths);
+  lua_pop(L, 1);
+
+  luaL_pushcfunction(L, rava_new_udp);
+
+  return 1;
+}

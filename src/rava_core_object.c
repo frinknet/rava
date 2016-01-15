@@ -1,8 +1,9 @@
 #include "rava.h"
 
 void ravaL_object_init(rava_state_t* state, rava_object_t* self) {
-  ngx_queue_init(&self->rouse);
-  ngx_queue_init(&self->queue);
+  QUEUE_INIT(&self->rouse);
+  QUEUE_INIT(&self->queue);
+
   self->state = state;
   self->data  = NULL;
   self->flags = 0;

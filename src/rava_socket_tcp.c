@@ -1,22 +1,24 @@
 #include "rava.h"
+#include "rava_common.h"
 #include <string.h>
 
-static int rava_new_tcp(lua_State* L)
+int rava_new_tcp(lua_State* L)
 {
   rava_state_t*  curr = ravaL_state_self(L);
   rava_object_t* self = (rava_object_t*)lua_newuserdata(L, sizeof(rava_object_t));
-  luaL_getmetatable(L, RAVA_NET_TCP_T);
+  luaL_getmetatable(L, RAVA_SOCKET_TCP);
   lua_setmetatable(L, -2);
 
   ravaL_object_init(curr, self);
 
   uv_tcp_init(ravaL_event_loop(L), &self->h.tcp);
+
   return 1;
 }
 
 static int rava_tcp_bind(lua_State* L)
 {
-  rava_object_t *self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_NET_TCP_T);
+  rava_object_t *self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_SOCKET_TCP);
 
   struct sockaddr_in addr;
   const char* host;
@@ -35,7 +37,7 @@ static int rava_tcp_bind(lua_State* L)
 
 static int rava_tcp_connect(lua_State *L)
 {
-  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_NET_TCP_T);
+  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_SOCKET_TCP);
   rava_state_t*  curr = ravaL_state_self(L);
 
   struct sockaddr_in addr;
@@ -65,7 +67,7 @@ static int rava_tcp_connect(lua_State *L)
 
 static int rava_tcp_nodelay(lua_State* L)
 {
-  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_NET_TCP_T);
+  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_SOCKET_TCP);
   luaL_checktype(L, 2, LUA_TBOOLEAN);
   int enable = lua_toboolean(L, 2);
   lua_settop(L, 2);
@@ -76,7 +78,7 @@ static int rava_tcp_nodelay(lua_State* L)
 
 static int rava_tcp_keepalive(lua_State* L)
 {
-  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_NET_TCP_T);
+  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_SOCKET_TCP);
   luaL_checktype(L, 2, LUA_TBOOLEAN);
   int enable = lua_toboolean(L, 2);
   unsigned int delay = 0;
@@ -92,7 +94,7 @@ static int rava_tcp_keepalive(lua_State* L)
 /* mostly stolen from Luvit */
 static int rava_tcp_getsockname(lua_State* L)
 {
-  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_NET_TCP_T);
+  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_SOCKET_TCP);
 
   int port = 0;
   char ip[INET6_ADDRSTRLEN];
@@ -132,7 +134,7 @@ static int rava_tcp_getsockname(lua_State* L)
 /* mostly stolen from Luvit */
 static int rava_tcp_getpeername(lua_State* L)
 {
-  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_NET_TCP_T);
+  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_SOCKET_TCP);
 
   int port = 0;
   char ip[INET6_ADDRSTRLEN];
@@ -171,8 +173,8 @@ static int rava_tcp_getpeername(lua_State* L)
 
 static int rava_tcp_tostring(lua_State *L)
 {
-  rava_object_t *self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_NET_TCP_T);
-  lua_pushfstring(L, "userdata<%s>: %p", RAVA_NET_TCP_T, self);
+  rava_object_t *self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_SOCKET_TCP);
+  lua_pushfstring(L, "userdata<%s>: %p", RAVA_SOCKET_TCP, self);
   return 1;
 }
 
@@ -187,3 +189,13 @@ luaL_Reg rava_tcp_meths[] = {
   {NULL,          NULL}
 };
 
+LUA_API int loaopen_rava_socket_tcp(lua_State* L)
+{
+  ravaL_class(L, RAVA_SOCKET_TCP, rava_stream_meths);
+  luaL_register(L, NULL, rava_tcp_meths);
+
+  lua_pop(L, 1);
+  luaL_pushcfunction(L, rava_new_tcp);
+
+  return 1;
+}
