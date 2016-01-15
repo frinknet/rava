@@ -1,5 +1,19 @@
 #include "rava.h"
-#include "rava_common.h"
+#include "rava_core.h"
+#include "rava_process.h"
+
+int rava_new_timer(lua_State* L)
+{
+  rava_object_t* self = (rava_object_t*)lua_newuserdata(L, sizeof(rava_object_t));
+  luaL_getmetatable(L, RAVA_PROCESS_TIMER);
+  lua_setmetatable(L, -2);
+
+  rava_state_t* curr = ravaL_state_self(L);
+  uv_timer_init(ravaL_event_loop(L), &self->h.timer);
+  ravaL_object_init(curr, self);
+
+  return 1;
+}
 
 static void _timer_cb(uv_timer_t* handle)
 {
@@ -14,19 +28,6 @@ static void _timer_cb(uv_timer_t* handle)
   }
 
   ravaL_cond_broadcast(&self->rouse);
-}
-
-static int rava_new_timer(lua_State* L)
-{
-  rava_object_t* self = (rava_object_t*)lua_newuserdata(L, sizeof(rava_object_t));
-  luaL_getmetatable(L, RAVA_PROCESS_TIMER);
-  lua_setmetatable(L, -2);
-
-  rava_state_t* curr = ravaL_state_self(L);
-  uv_timer_init(ravaL_event_loop(L), &self->h.timer);
-  ravaL_object_init(curr, self);
-
-  return 1;
 }
 
 /* methods */

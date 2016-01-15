@@ -1,23 +1,8 @@
 #include "rava.h"
+#include "rava_core_stream.h"
+#include "rava_core_state.h"
 
-/* used by udp and stream */
-void ravaL_alloc_cb(uv_handle_t* handle, size_t size, uv_buf_t* buf)
-{
-  rava_object_t* self = container_of(handle, rava_object_t, h);
-	size = (size_t)self->buf.len;
-
-  uv_buf_init((char*)malloc(size), size);
-}
-
-/* used by tcp and pipe */
-void ravaL_connect_cb(uv_connect_t* req, int status)
-{
-  rava_state_t* state = container_of(req, rava_state_t, req);
-
-  ravaL_state_ready(state);
-}
-
-void _read_cb(uv_stream_t* stream, ssize_t len, const uv_buf_t* buf)
+static void _read_cb(uv_stream_t* stream, ssize_t len, const uv_buf_t* buf)
 {
   TRACE("got data\n");
 
@@ -148,6 +133,77 @@ static void _listen_cb(uv_stream_t* server, int status)
   }
 }
 
+/* used by udp and stream */
+void ravaL_alloc_cb(uv_handle_t* handle, size_t size, uv_buf_t* buf)
+{
+  rava_object_t* self = container_of(handle, rava_object_t, h);
+	size = (size_t)self->buf.len;
+
+  uv_buf_init((char*)malloc(size), size);
+}
+
+/* used by tcp and pipe */
+void ravaL_connect_cb(uv_connect_t* req, int status)
+{
+  rava_state_t* state = container_of(req, rava_state_t, req);
+
+  ravaL_state_ready(state);
+}
+
+void ravaL_stream_free(rava_object_t* self)
+{
+  ravaL_object_close(self);
+
+  TRACE("free stream: %p\n", self);
+
+  if (self->buf.base) {
+    free(self->buf.base);
+
+    self->buf.base = NULL;
+    self->buf.len  = 0;
+  }
+}
+
+void ravaL_stream_close(rava_object_t* self)
+{
+  TRACE("close stream\n");
+
+  if (ravaL_object_is_started(self)) {
+    ravaL_stream_stop(self);
+  }
+
+  ravaL_object_close(self);
+
+  if (self->buf.base) {
+    free(self->buf.base);
+
+    self->buf.base = NULL;
+    self->buf.len  = 0;
+  }
+}
+
+int ravaL_stream_start(rava_object_t* self)
+{
+  if (!ravaL_object_is_started(self)) {
+    self->flags |= RAVA_OSTARTED;
+
+    return uv_read_start(&self->h.stream, ravaL_alloc_cb, _read_cb);
+  }
+
+  return 0;
+}
+
+int ravaL_stream_stop(rava_object_t* self)
+{
+  if (ravaL_object_is_started(self)) {
+    self->flags &= ~RAVA_OSTARTED;
+
+    return uv_read_stop(&self->h.stream);
+  }
+
+  return 0;
+}
+
 static int rava_stream_listen(lua_State* L)
 {
   luaL_checktype(L, 1, LUA_TUSERDATA);
@@ -192,28 +248,6 @@ static int rava_stream_accept(lua_State *L)
   self->flags |= RAVA_OWAITING;
 
   return ravaL_cond_wait(&self->rouse, curr);
-}
-
-int ravaL_stream_start(rava_object_t* self)
-{
-  if (!ravaL_object_is_started(self)) {
-    self->flags |= RAVA_OSTARTED;
-
-    return uv_read_start(&self->h.stream, ravaL_alloc_cb, _read_cb);
-  }
-
-  return 0;
-}
-
-int ravaL_stream_stop(rava_object_t* self)
-{
-  if (ravaL_object_is_started(self)) {
-    self->flags &= ~RAVA_OSTARTED;
-
-    return uv_read_stop(&self->h.stream);
-  }
-
-  return 0;
 }
 
 #define STREAM_ERROR(L,fmt,loop) do { \
@@ -357,44 +391,12 @@ static int rava_stream_writable(lua_State* L)
   return 1;
 }
 
-void ravaL_stream_close(rava_object_t* self)
-{
-  TRACE("close stream\n");
-
-  if (ravaL_object_is_started(self)) {
-    ravaL_stream_stop(self);
-  }
-
-  ravaL_object_close(self);
-
-  if (self->buf.base) {
-    free(self->buf.base);
-
-    self->buf.base = NULL;
-    self->buf.len  = 0;
-  }
-}
-
 static int rava_stream_close(lua_State* L)
 {
   rava_object_t* self = (rava_object_t*)lua_touserdata(L, 1);
   ravaL_stream_close(self);
 
   return ravaL_cond_wait(&self->rouse, ravaL_state_self(L));
-}
-
-void ravaL_stream_free(rava_object_t* self)
-{
-  ravaL_object_close(self);
-
-  TRACE("free stream: %p\n", self);
-
-  if (self->buf.base) {
-    free(self->buf.base);
-
-    self->buf.base = NULL;
-    self->buf.len  = 0;
-  }
 }
 
 static int rava_stream_free(lua_State* L)

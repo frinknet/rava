@@ -166,69 +166,7 @@ union rava_any_object {
   rava_chan_t   chan;
 };
 
-int ravaL_traceback(lua_State *L);
-
-uv_loop_t* ravaL_event_loop(lua_State* L);
-
-int ravaL_state_in_thread(rava_state_t* state);
-int ravaL_state_is_thread(rava_state_t* state);
-int ravaL_state_is_active(rava_state_t* state);
-
-void ravaL_state_ready  (rava_state_t* state);
-int  ravaL_state_yield  (rava_state_t* state, int narg);
-int  ravaL_state_suspend(rava_state_t* state);
-int  ravaL_state_resume (rava_state_t* state, int narg);
-
-void ravaL_fiber_ready  (rava_fiber_t* fiber);
-int  ravaL_fiber_yield  (rava_fiber_t* fiber, int narg);
-int  ravaL_fiber_suspend(rava_fiber_t* fiber);
-int  ravaL_fiber_resume (rava_fiber_t* fiber, int narg);
-
-int  ravaL_thread_loop   (rava_thread_t* thread);
-int  ravaL_thread_once   (rava_thread_t* thread);
-void ravaL_thread_ready  (rava_thread_t* thread);
-int  ravaL_thread_yield  (rava_thread_t* thread, int narg);
-int  ravaL_thread_suspend(rava_thread_t* thread);
-int  ravaL_thread_resume (rava_thread_t* thread, int narg);
-void ravaL_thread_enqueue(rava_thread_t* thread, rava_fiber_t* fiber);
-
-rava_state_t*  ravaL_state_self (lua_State* L);
-rava_thread_t* ravaL_thread_self(lua_State* L);
-
-void ravaL_thread_init_main(lua_State* L);
-
-rava_fiber_t*  ravaL_fiber_create (rava_state_t* outer, int narg);
-rava_thread_t* ravaL_thread_create(rava_state_t* outer, int narg);
-
-void ravaL_fiber_close (rava_fiber_t* self);
-
-int  ravaL_thread_loop (rava_thread_t* self);
-int  ravaL_thread_once (rava_thread_t* self);
-
-void ravaL_object_init (rava_state_t* state, rava_object_t* self);
-void ravaL_object_close(rava_object_t* self);
-
-int  ravaL_stream_stop (rava_object_t* self);
-void ravaL_stream_free (rava_object_t* self);
-void ravaL_stream_close(rava_object_t* self);
-
 typedef QUEUE rava_cond_t;
-
-int ravaL_cond_init      (rava_cond_t* cond);
-int ravaL_cond_wait      (rava_cond_t* cond, rava_state_t* curr);
-int ravaL_cond_signal    (rava_cond_t* cond);
-int ravaL_cond_broadcast (rava_cond_t* cond);
-
-int ravaL_serialize_encode(lua_State* L, int narg);
-int ravaL_serialize_decode(lua_State* L);
-
-int ravaL_lib_decoder(lua_State* L);
-
-void ravaL_alloc_cb   (uv_handle_t* handle, size_t size, uv_buf_t* buf);
-void ravaL_connect_cb (uv_connect_t* conn, int status);
-
-int ravaL_new_class (lua_State* L, const char* name, luaL_Reg* meths);
-int ravaL_new_module(lua_State* L, const char* name, luaL_Reg* funcs);
 
 typedef struct rava_const_reg_s {
   const char*   key;
@@ -240,39 +178,6 @@ typedef struct rava_buf_t {
   uint8_t* head;
   uint8_t* base;
 } rava_buf_t;
-
-extern luaL_Reg rava_thread_funcs[32];
-extern luaL_Reg rava_thread_meths[32];
-
-extern luaL_Reg rava_fiber_funcs[32];
-extern luaL_Reg rava_fiber_meths[32];
-
-extern luaL_Reg rava_cond_funcs[32];
-extern luaL_Reg rava_cond_meths[32];
-
-extern luaL_Reg rava_serialize_funcs[32];
-
-extern luaL_Reg rava_timer_funcs[32];
-extern luaL_Reg rava_timer_meths[32];
-
-extern luaL_Reg rava_idle_funcs[32];
-extern luaL_Reg rava_idle_meths[32];
-
-extern luaL_Reg rava_system_fs_funcs[32];
-extern luaL_Reg rava_system_file_meths[32];
-
-extern luaL_Reg rava_stream_meths[32];
-
-extern luaL_Reg rava_socket_funcs[32];
-
-extern luaL_Reg rava_tcp_meths[32];
-extern luaL_Reg rava_udp_meths[32];
-
-extern luaL_Reg rava_pipe_funcs[32];
-extern luaL_Reg rava_pipe_meths[32];
-
-extern luaL_Reg rava_process_funcs[32];
-extern luaL_Reg rava_process_meths[32];
 
 #ifdef WIN32
 #  ifdef RAVA_EXPORT
@@ -297,13 +202,11 @@ LUALIB_API int luaopen_rava(lua_State *L);
 #define container_of(ptr, type, member) \
   ((type*) ((char*)(ptr) - offsetof(type, member)))
 
-/* lifted from luasys */
 #define rava_boxpointer(L,u) \
     (*(void**) (lua_newuserdata(L, sizeof(void*))) = (u))
 #define rava_unboxpointer(L,i) \
     (*(void**) (lua_touserdata(L, i)))
 
-/* lifted from luasys */
 #define rava_boxinteger(L,n) \
     (*(lua_Integer*) (lua_newuserdata(L, sizeof(lua_Integer))) = (lua_Integer) (n))
 #define rava_unboxinteger(L,i) \

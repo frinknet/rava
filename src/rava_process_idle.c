@@ -1,5 +1,6 @@
 #include "rava.h"
-#include "rava_common.h"
+#include "rava_core.h"
+#include "rava_process.h"
 
 int rava_new_idle(lua_State* L)
 {

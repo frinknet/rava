@@ -1,20 +1,8 @@
 #include "rava.h"
-
+#include "rava_core.h"
+#include "rava_core_state.h"
+#include "rava_process_thread.h"
 #include <stdio.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include "lua.h"
-#include "lualib.h"
-#include "lauxlib.h"
-
-#ifdef __cplusplus
-}
-#endif
-
-static int MAIN_INITIALIZED = 0;
 
 int ravaL_traceback(lua_State* L)
 {
@@ -68,7 +56,7 @@ uv_loop_t* ravaL_event_loop(lua_State* L)
   return ravaL_state_self(L)->loop;
 }
 
-int ravaL_new_module(lua_State* L, const char* name, luaL_Reg* funcs)
+static int ravaL_new_module(lua_State* L, const char* name, luaL_Reg* funcs)
 {
   lua_newtable(L);
 
@@ -90,7 +78,7 @@ int ravaL_new_module(lua_State* L, const char* name, luaL_Reg* funcs)
   return 1;
 }
 
-int ravaL_new_class(lua_State* L, const char* name, luaL_Reg* meths)
+static int ravaL_new_class(lua_State* L, const char* name, luaL_Reg* meths)
 {
   luaL_newmetatable(L, name);
   lua_pushvalue(L, -1);
@@ -98,5 +86,56 @@ int ravaL_new_class(lua_State* L, const char* name, luaL_Reg* meths)
   if (meths) {
     luaL_register(L, NULL, meths);
   }
+  return 1;
+}
+
+int ravaL_require(lua_State* L, const char* path)
+{
+  lua_getglobal(L, "require");
+  lua_pushstring(L, path);
+  lua_call(L, 1, 1);
+  return 1;
+}
+
+int ravaL_module(lua_State* L, const char* name, luaL_Reg* funcs)
+{
+  TRACE("new module: %s, funcs: %p\n", name, funcs);
+  lua_newtable(L);
+
+  lua_pushstring(L, name);
+  lua_setfield(L, -2, "__name");
+
+  /* its own metatable */
+  lua_pushvalue(L, -1);
+  lua_setmetatable(L, -2);
+
+  /* so that it can pass through a thread boundary */
+  lua_pushcfunction(L, ravaL_lib_encoder);
+  lua_setfield(L, -2, "__serialize");
+
+  lua_pushvalue(L, -1);
+  lua_setfield(L, LUA_REGISTRYINDEX, name);
+
+  if (funcs) {
+    TRACE("register funcs...\n");
+    luaL_register(L, NULL, funcs);
+  }
+
+  TRACE("DONE\n");
+  return 1;
+}
+
+int ravaL_class(lua_State* L, const char* name, luaL_Reg* meths)
+{
+  TRACE("new class: %s, meths: %p\n", name, meths);
+  luaL_newmetatable(L, name);
+  lua_pushvalue(L, -1);
+  lua_setfield(L, -2, "__index");
+
+  if (meths) luaL_register(L, NULL, meths);
+
+  lua_pushstring(L, name);
+  lua_setfield(L, -2, "__name");
+
   return 1;
 }

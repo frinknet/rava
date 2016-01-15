@@ -1,6 +1,8 @@
-#include "rava.h"
-#include "rava_common.h"
 #include <string.h>
+
+#include "rava.h"
+#include "rava_core.h"
+#include "rava_socket.h"
 
 int rava_new_udp(lua_State* L)
 {
@@ -120,7 +122,7 @@ static int rava_udp_recv(lua_State* L)
 
 static const char* RAVA_UDP_MEMBERSHIP_OPTS[] = { "join", "leave", NULL };
 
-int rava_udp_membership(lua_State* L)
+static int rava_udp_membership(lua_State* L)
 {
   rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_SOCKET_UDP);
   const char*  iaddr = luaL_checkstring(L, 3);

@@ -1,6 +1,7 @@
-#include "rava.h"
-#include "rava_common.h"
 #include <string.h>
+#include "rava.h"
+#include "rava_core.h"
+#include "rava_socket.h"
 
 int rava_new_tcp(lua_State* L)
 {

@@ -1,8 +1,7 @@
-#include "rava.h"
-#include "rava_common.h"
 #include <stdio.h>
-
-LUA_API int luaopen_system_fs(lua_State* L);
+#include "rava.h"
+#include "rava_core.h"
+#include "rava_system.h"
 
 static int rava_system_cpus(lua_State* L)
 {

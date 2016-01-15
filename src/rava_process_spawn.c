@@ -1,7 +1,20 @@
 #include "rava.h"
-#include "rava_common.h"
+#include "rava_core.h"
+#include "rava_process.h"
 
-void _exit_cb(uv_process_t* handle, int64_t status, int sigterm)
+/*
+  rava.process.spawn("cat", {
+    "foo.txt",
+    env    = { HOME = "/home/cnorris" },
+    cwd    = "/tmp",
+    stdin  = rava.stdout,
+    stdout = rava.stdin,
+    stderr = rava.stderr,
+    detach = true,
+  })
+*/
+
+static void _exit_cb(uv_process_t* handle, int64_t status, int sigterm)
 {
   TRACE("EXIT : status %i, sigterm %i\n", status, sigterm);
   rava_object_t* self = container_of(handle, rava_object_t, h);
@@ -17,19 +30,7 @@ void _exit_cb(uv_process_t* handle, int64_t status, int sigterm)
   ravaL_cond_signal(&self->rouse);
 }
 
-/*
-  rava.process.spawn("cat", {
-    "foo.txt",
-    env    = { HOME = "/home/cnorris" },
-    cwd    = "/tmp",
-    stdin  = rava.stdout,
-    stdout = rava.stdin,
-    stderr = rava.stderr,
-    detach = true,
-  })
-*/
-
-static int rava_new_spawn(lua_State* L)
+int rava_new_spawn(lua_State* L)
 {
   const char* cmd = luaL_checkstring(L, 1);
   size_t argc;

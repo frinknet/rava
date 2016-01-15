@@ -1,11 +1,5 @@
 #include "rava.h"
-
-#include <stdint.h>
-#include <stddef.h>
-
-#define RAVA_CODEC_TREF 1
-#define RAVA_CODEC_TVAL 2
-#define RAVA_CODEC_TUSR 3
+#include "rava_core_serialize.h"
 
 static int encode_table(lua_State* L, rava_buf_t* buf, int seen);
 static int decode_table(lua_State* L, rava_buf_t* buf, int seen);

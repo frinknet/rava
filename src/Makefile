@@ -1,5 +1,4 @@
 RAVA_SRC=main.c \
-	rava_common.c \
 	rava_core.c \
 	rava_core_object.c \
 	rava_core_serialize.c \
@@ -24,8 +23,14 @@ RAVA_OBJ=$(RAVA_SRC:.c=.o)
 CCARGS=-I../libs/luajit/ -I../libs/libuv/ -lpthread
 
 CC := gcc
+LD := ld
 
-all: $(RAVA_OBJ)
+all: librava.a
+
+librava.a: $(RAVA_OBJ)
+	@echo LD $+
+	$(LD) -r -static $+ -o $@
+
 
 .c.o:
 	@echo CC $<

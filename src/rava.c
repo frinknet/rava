@@ -1,5 +1,5 @@
 #include "rava.h"
-#include "rava_common.h"
+#include "rava_core.h"
 
 LUA_API int luaopen_rava_process(lua_State *L);
 LUA_API int luaopen_rava_socket(lua_State *L);

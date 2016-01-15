@@ -1,7 +1,19 @@
 #include "rava.h"
-#include "rava_common.h"
+#include "rava_core.h"
+#include "rava_process.h"
 
-void ravaL_fiber_close(rava_fiber_t* fiber) {
+int rava_new_fiber(lua_State* L)
+{
+  rava_state_t* outer = ravaL_state_self(L);
+  ravaL_fiber_create(outer, lua_gettop(L));
+
+  assert(lua_gettop(L) == 1);
+
+  return 1;
+}
+
+void ravaL_fiber_close(rava_fiber_t* fiber)
+{
   if (fiber->flags & RAVA_STATE_DEAD) return;
 
   lua_pushthread(fiber->L);
@@ -11,35 +23,52 @@ void ravaL_fiber_close(rava_fiber_t* fiber) {
   fiber->flags |= RAVA_STATE_DEAD;
 }
 
-void ravaL_fiber_ready(rava_fiber_t* fiber) {
+void ravaL_fiber_ready(rava_fiber_t* fiber)
+{
   if (!(fiber->flags & RAVA_STATE_READY)) {
     TRACE("insert fiber %p into queue of %p\n", fiber, ravaL_thread_self(fiber->L));
+
     fiber->flags |= RAVA_STATE_READY;
+
     ravaL_thread_enqueue(ravaL_thread_self(fiber->L), fiber);
   }
 }
-int ravaL_fiber_yield(rava_fiber_t* self, int narg) {
+
+int ravaL_fiber_yield(rava_fiber_t* self, int narg)
+{
   ravaL_fiber_ready(self);
+
   return lua_yield(self->L, narg);
 }
-int ravaL_fiber_suspend(rava_fiber_t* self) {
+
+int ravaL_fiber_suspend(rava_fiber_t* self)
+{
   TRACE("FIBER SUSPEND - READY? %i\n", self->flags & RAVA_STATE_READY);
+
   if (self->flags & RAVA_STATE_READY) {
     self->flags &= ~RAVA_STATE_READY;
+
     if (!ravaL_state_is_active((rava_state_t*)self)) {
       QUEUE_REMOVE(&self->queue);
     }
+
     TRACE("about to yield...\n");
+
     return lua_yield(self->L, lua_gettop(self->L)); /* keep our stack */
   }
+
   return 0;
 }
-int ravaL_fiber_resume(rava_fiber_t* self, int narg) {
+
+int ravaL_fiber_resume(rava_fiber_t* self, int narg)
+{
   ravaL_fiber_ready(self);
+
   return lua_resume(self->L, narg);
 }
 
-rava_fiber_t* ravaL_fiber_create(rava_state_t* outer, int narg) {
+rava_fiber_t* ravaL_fiber_create(rava_state_t* outer, int narg)
+{
   TRACE("spawn fiber as child of: %p\n", outer);
 
   rava_fiber_t* self;
@@ -78,61 +107,58 @@ rava_fiber_t* ravaL_fiber_create(rava_state_t* outer, int narg) {
   return self;
 }
 
-/* Lua API */
-static int rava_new_fiber(lua_State* L) {
-  rava_state_t* outer = ravaL_state_self(L);
-  ravaL_fiber_create(outer, lua_gettop(L));
-  assert(lua_gettop(L) == 1);
-  return 1;
-}
-
-int ravaL_state_xcopy(rava_state_t* a, rava_state_t* b) {
-  int i, narg;
-  narg = lua_gettop(a->L);
-  lua_checkstack(a->L, 1);
-  lua_checkstack(b->L, narg);
-  for (i = 1; i <= narg; i++) {
-    lua_pushvalue(a->L, i);
-    lua_xmove(a->L, b->L, 1);
-  }
-  return narg;
-}
-
-static int rava_fiber_join(lua_State* L) {
+static int rava_fiber_join(lua_State* L)
+{
   rava_fiber_t* self = (rava_fiber_t*)luaL_checkudata(L, 1, RAVA_PROCESS_FIBER);
   rava_state_t* curr = (rava_state_t*)ravaL_state_self(L);
+
   TRACE("joining fiber[%p], from [%p]\n", self, curr);
+
   assert((rava_state_t*)self != curr);
+
   if (self->flags & RAVA_STATE_DEAD) {
     /* seen join after termination */
     TRACE("join after termination\n");
+
     return ravaL_state_xcopy((rava_state_t*)self, curr);
   }
+
   QUEUE_INSERT_TAIL(&self->rouse, &curr->join);
+
   ravaL_fiber_ready(self);
+
   TRACE("calling ravaL_state_suspend on %p\n", curr);
+
   if (curr->type == RAVA_TFIBER) {
     return ravaL_state_suspend(curr);
-  }
-  else {
+	} else {
     ravaL_state_suspend(curr);
+
     return ravaL_state_xcopy((rava_state_t*)self, curr);
   }
 }
 
-static int rava_fiber_ready(lua_State* L) {
+static int rava_fiber_ready(lua_State* L)
+{
   rava_fiber_t* self = (rava_fiber_t*)lua_touserdata(L, 1);
   ravaL_fiber_ready(self);
+
   return 1;
 }
-static int rava_fiber_free(lua_State* L) {
+
+static int rava_fiber_free(lua_State* L)
+{
   rava_fiber_t* self = (rava_fiber_t*)lua_touserdata(L, 1);
   if (self->data) free(self->data);
+
   return 1;
 }
-static int rava_fiber_tostring(lua_State* L) {
+
+static int rava_fiber_tostring(lua_State* L)
+{
   rava_fiber_t* self = (rava_fiber_t*)lua_touserdata(L, 1);
   lua_pushfstring(L, "userdata<%s>: %p", RAVA_PROCESS_FIBER, self);
+
   return 1;
 }
 

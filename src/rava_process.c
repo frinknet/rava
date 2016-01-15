@@ -1,19 +1,6 @@
 #include "rava.h"
-#include "rava_common.h"
-
-LUA_API int luaopen_rava_new_cond(lua_State* L);
-LUA_API int luaopen_rava_new_fiber(lua_State* L);
-LUA_API int luaopen_rava_new_idle(lua_State* L);
-LUA_API int luaopen_rava_new_process(lua_State* L);
-LUA_API int luaopen_rava_new_thread(lua_State* L);
-LUA_API int luaopen_rava_new_timer(lua_State* L);
-
-int rava_new_cond(lua_State* L);
-int rava_new_fiber(lua_State* L);
-int rava_new_idle(lua_State* L);
-int rava_new_spawn(lua_State* L);
-int rava_new_thread(lua_State* L);
-int rava_new_timer(lua_State* L);
+#include "rava_core.h"
+#include "rava_process.h"
 
 static void _sleep_cb(uv_timer_t* handle)
 {
@@ -78,7 +65,7 @@ luaL_Reg rava_process_funcs[] = {
 
 LUA_API int luaopen_rava_process(lua_State* L)
 {
-  ravaL_module(L, RAVA_PROCESS, rava_process_funcs);
+	ravaL_module(L, RAVA_PROCESS, rava_process_funcs);
 
 	luaopen_rava_new_cond(L);
 	luaopen_rava_new_fiber(L);

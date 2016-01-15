@@ -1,5 +1,53 @@
 #include "rava.h"
-#include "rava_common.h"
+#include "rava_core.h"
+#include "rava_process.h"
+
+static void _async_cb(uv_async_t* handle)
+{
+  TRACE("interrupt loop\n");
+
+  (void)handle;
+}
+
+static void _thread_enter(void* arg)
+{
+  rava_thread_t* self = (rava_thread_t*)arg;
+
+  ravaL_serialize_decode(self->L);
+  lua_remove(self->L, 1);
+
+  luaL_checktype(self->L, 1, LUA_TFUNCTION);
+  lua_pushcfunction(self->L, ravaL_traceback);
+  lua_insert(self->L, 1);
+
+  int nargs = lua_gettop(self->L) - 2;
+  int r = lua_pcall(self->L, nargs, LUA_MULTRET, 1);
+
+  lua_remove(self->L, 1); /* traceback */
+
+  if (r) { /* error */
+    lua_pushboolean(self->L, 0);
+    lua_insert(self->L, 1);
+    ravaL_thread_ready(self);
+    luaL_error(self->L, lua_tostring(self->L, -1));
+  } else {
+    lua_pushboolean(self->L, 1);
+    lua_insert(self->L, 1);
+  }
+
+  self->flags |= RAVA_STATE_DEAD;
+}
+
+int rava_new_thread(lua_State* L)
+{
+  rava_state_t* outer = ravaL_state_self(L);
+
+  int narg = lua_gettop(L);
+
+  ravaL_thread_create(outer, narg);
+
+  return 1;
+}
 
 void ravaL_thread_ready(rava_thread_t* self)
 {
@@ -225,13 +273,6 @@ int ravaL_thread_loop(rava_thread_t* self)
   return 0;
 }
 
-static void _async_cb(uv_async_t* handle)
-{
-  TRACE("interrupt loop\n");
-
-  (void)handle;
-}
-
 void ravaL_thread_init_main(lua_State* L)
 {
   rava_thread_t* self = (rava_thread_t*)lua_newuserdata(L, sizeof(rava_thread_t));
@@ -256,35 +297,6 @@ void ravaL_thread_init_main(lua_State* L)
   lua_pushthread(L);
   lua_pushvalue(L, -2);
   lua_rawset(L, LUA_REGISTRYINDEX);
-}
-
-static void _thread_enter(void* arg)
-{
-  rava_thread_t* self = (rava_thread_t*)arg;
-
-  ravaL_serialize_decode(self->L);
-  lua_remove(self->L, 1);
-
-  luaL_checktype(self->L, 1, LUA_TFUNCTION);
-  lua_pushcfunction(self->L, ravaL_traceback);
-  lua_insert(self->L, 1);
-
-  int nargs = lua_gettop(self->L) - 2;
-  int r = lua_pcall(self->L, nargs, LUA_MULTRET, 1);
-
-  lua_remove(self->L, 1); /* traceback */
-
-  if (r) { /* error */
-    lua_pushboolean(self->L, 0);
-    lua_insert(self->L, 1);
-    ravaL_thread_ready(self);
-    luaL_error(self->L, lua_tostring(self->L, -1));
-  } else {
-    lua_pushboolean(self->L, 1);
-    lua_insert(self->L, 1);
-  }
-
-  self->flags |= RAVA_STATE_DEAD;
 }
 
 rava_thread_t* ravaL_thread_create(rava_state_t* outer, int narg)
@@ -337,17 +349,6 @@ rava_thread_t* ravaL_thread_create(rava_state_t* outer, int narg)
 }
 
 /* Lua API */
-static int rava_new_thread(lua_State* L)
-{
-  rava_state_t* outer = ravaL_state_self(L);
-
-  int narg = lua_gettop(L);
-
-  ravaL_thread_create(outer, narg);
-
-  return 1;
-}
-
 static int rava_thread_join(lua_State* L)
 {
   rava_thread_t* self = (rava_thread_t*)luaL_checkudata(L, 1, RAVA_PROCESS_THREAD);
