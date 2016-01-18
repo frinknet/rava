@@ -19,8 +19,8 @@ static void _exit_cb(uv_process_t* handle, int64_t status, int sigterm)
   TRACE("EXIT : status %i, sigterm %i\n", status, sigterm);
   rava_object_t* self = container_of(handle, rava_object_t, h);
 
-  if (status == -1) {
-    TRACE("ERROR: %s\n", uv_strerror(uv_last_error(self->state->loop)));
+  if (status < 0) {
+    TRACE("ERROR: %s\n", uv_strerror(status));
   }
 
   lua_State* L = self->state->L;

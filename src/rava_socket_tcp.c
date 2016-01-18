@@ -190,13 +190,13 @@ luaL_Reg rava_tcp_meths[] = {
   {NULL,          NULL}
 };
 
-LUA_API int loaopen_rava_socket_tcp(lua_State* L)
+LUA_API int luaopen_rava_socket_tcp(lua_State* L)
 {
   ravaL_class(L, RAVA_SOCKET_TCP, rava_stream_meths);
   luaL_register(L, NULL, rava_tcp_meths);
 
   lua_pop(L, 1);
-  luaL_pushcfunction(L, rava_new_tcp);
+  lua_pushcfunction(L, rava_new_tcp);
 
   return 1;
 }

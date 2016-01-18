@@ -62,9 +62,9 @@ void ravaL_thread_ready(rava_thread_t* self)
 
 int ravaL_thread_yield(rava_thread_t* self, int narg)
 {
-  TRACE("calling uv_run_once\n");
+  TRACE("calling uv_run\n");
 
-  uv_run_once(self->loop);
+  uv_run(self->loop, UV_RUN_ONCE);
 
   TRACE("done\n");
 
@@ -87,9 +87,9 @@ int ravaL_thread_suspend(rava_thread_t* self)
 
       ravaL_thread_loop(self);
 
-      active = uv_run_once(self->loop);
+      active = uv_run(self->loop, UV_RUN_ONCE);
 
-      TRACE("uv_run_once returned, active: %i\n", active);
+      TRACE("uv_run UV_RUN_ONCE returned, active: %i\n", active);
 
       if (self->flags & RAVA_STATE_READY) {
         TRACE("main ready, breaking\n");
@@ -109,7 +109,7 @@ int ravaL_thread_suspend(rava_thread_t* self)
 
 int ravaL_thread_resume(rava_thread_t* self, int narg)
 {
-  /* interrupt the uv_run_once loop in ravaL_thread_schedule */
+  /* interrupt the uv_run loop in ravaL_thread_schedule */
   TRACE("resuming...\n");
 
   ravaL_thread_ready(self);

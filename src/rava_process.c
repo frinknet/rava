@@ -67,12 +67,12 @@ LUA_API int luaopen_rava_process(lua_State* L)
 {
 	ravaL_module(L, RAVA_PROCESS, rava_process_funcs);
 
-	luaopen_rava_new_cond(L);
-	luaopen_rava_new_fiber(L);
-	luaopen_rava_new_idle(L);
-	luaopen_rava_new_process(L);
-	luaopen_rava_new_thread(L);
-	luaopen_rava_new_timer(L);
+	luaopen_rava_process_cond(L);
+	luaopen_rava_process_fiber(L);
+	luaopen_rava_process_idle(L);
+	luaopen_rava_process_spawn(L);
+	luaopen_rava_process_thread(L);
+	luaopen_rava_process_timer(L);
 
   lua_pop(L, 6);
 

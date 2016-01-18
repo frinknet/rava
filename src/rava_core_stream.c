@@ -2,7 +2,7 @@
 #include "rava_core_stream.h"
 #include "rava_core_state.h"
 
-static void _read_cb(uv_stream_t* stream, ssize_t len, const uv_buf_t* buf)
+static void _read_cb(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf)
 {
   TRACE("got data\n");
 
@@ -13,9 +13,9 @@ static void _read_cb(uv_stream_t* stream, ssize_t len, const uv_buf_t* buf)
 
     ravaL_stream_stop(self);
 
-    if (len >= 0) {
+    if (nread >= 0) {
       self->buf   = uv_buf_init(buf->base, buf->len);
-      self->count = len;
+      self->count = nread;
 		} else {
       if (buf->base) {
         free(buf->base);
@@ -36,29 +36,25 @@ static void _read_cb(uv_stream_t* stream, ssize_t len, const uv_buf_t* buf)
 
     lua_settop(s->L, 0);
 
-    if (len >= 0) {
-      lua_pushinteger(s->L, len);
-      lua_pushlstring(s->L, (char*)buf->base, len);
+    if (nread >= 0) {
+      lua_pushinteger(s->L, nread);
+      lua_pushlstring(s->L, (char*)buf->base, buf->len);
 
-      if (len == 0) ravaL_stream_stop(self);
+      if (nread == 0) ravaL_stream_stop(self);
+		} else if (nread == UV_EOF) {
+      TRACE("GOT EOF\n");
+
+      lua_settop(s->L, 0);
+      lua_pushnil(s->L);
 		} else {
-      int r = uv_last_error(s->loop);
+      lua_settop(s->L, 0);
+      lua_pushboolean(s->L, 0);
+      lua_pushfstring(s->L, "read: %s", uv_strerror(nread));
 
-      if (r == UV_EOF) {
-        TRACE("GOT EOF\n");
+      TRACE("READ ERROR, CLOSING STREAM\n");
 
-        lua_settop(s->L, 0);
-        lua_pushnil(s->L);
-			} else {
-        lua_settop(s->L, 0);
-        lua_pushboolean(s->L, 0);
-        lua_pushfstring(s->L, "read: %s", uv_strerror(r));
-
-        TRACE("READ ERROR, CLOSING STREAM\n");
-
-        ravaL_stream_stop(self);
-        ravaL_object_close(self);
-      }
+      ravaL_stream_stop(self);
+      ravaL_object_close(self);
     }
 
     if (buf->base) {
@@ -250,13 +246,13 @@ static int rava_stream_accept(lua_State *L)
   return ravaL_cond_wait(&self->rouse, curr);
 }
 
-#define STREAM_ERROR(L,fmt,loop) do { \
-  int r = uv_last_error(loop); \
-  lua_settop(L, 0); \
-  lua_pushboolean(L, 0); \
-  lua_pushfstring(L, fmt, uv_strerror(r)); \
-  TRACE("STREAM ERROR: %s\n", lua_tostring(L, -1)); \
-} while (0)
+// #define STREAM_ERROR(L,fmt,loop) do { \
+//   int r = uv_last_error(loop); \
+//   lua_settop(L, 0); \
+//   lua_pushboolean(L, 0); \
+//   lua_pushfstring(L, fmt, uv_strerror(r)); \
+//   TRACE("STREAM ERROR: %s\n", lua_tostring(L, -1)); \
+// } while (0)
 
 static int rava_stream_start(lua_State* L)
 {
@@ -266,9 +262,10 @@ static int rava_stream_start(lua_State* L)
     ravaL_stream_stop(self);
     ravaL_object_close(self);
 
-    STREAM_ERROR(L, "read start: %s", ravaL_event_loop(L));
+    // STREAM_ERROR(L, "read start: %s", ravaL_event_loop(L));
 
-    return 2;
+    // return 2;
+		return 0;
   }
 
   lua_pushboolean(L, 1);
@@ -281,9 +278,10 @@ static int rava_stream_stop(lua_State* L)
   rava_object_t* self = (rava_object_t*)lua_touserdata(L, 1);
 
   if (ravaL_stream_stop(self)) {
-    STREAM_ERROR(L, "read stop: %s", ravaL_event_loop(L));
+    // STREAM_ERROR(L, "read stop: %s", ravaL_event_loop(L));
 
-    return 2;
+    // return 2;
+		return 0;
   }
 
   lua_pushboolean(L, 1);
@@ -349,9 +347,10 @@ static int rava_stream_write(lua_State* L)
     ravaL_stream_stop(self);
     ravaL_object_close(self);
 
-    STREAM_ERROR(L, "write: %s", ravaL_event_loop(L));
+    // STREAM_ERROR(L, "write: %s", ravaL_event_loop(L));
 
-    return 2;
+    // return 2;
+		return 0;
   }
 
   lua_settop(curr->L, 1);

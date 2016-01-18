@@ -33,4 +33,4 @@
     } \
   } while(0)
 
-LUA_API int loaopen_rava_system_fs(lua_State* L);
+LUA_API int luaopen_rava_system_fs(lua_State* L);

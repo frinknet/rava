@@ -166,13 +166,13 @@ luaL_Reg rava_udp_meths[] = {
   {NULL,         NULL}
 };
 
-LUA_API int loaopen_rava_socket_udp(lua_State* L)
+LUA_API int luaopen_rava_socket_udp(lua_State* L)
 {
   ravaL_class(L, RAVA_SOCKET_UDP, rava_stream_meths);
   luaL_register(L, NULL, rava_udp_meths);
   lua_pop(L, 1);
 
-  luaL_pushcfunction(L, rava_new_udp);
+  lua_pushcfunction(L, rava_new_udp);
 
   return 1;
 }

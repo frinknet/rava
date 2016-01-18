@@ -70,13 +70,13 @@ luaL_Reg rava_pipe_meths[] = {
   {NULL,          NULL}
 };
 
-LUA_API int loaopen_rava_socket_pipe(lua_State* L)
+LUA_API int luaopen_rava_socket_pipe(lua_State* L)
 {
   ravaL_class(L, RAVA_SOCKET_PIPE, rava_stream_meths);
   luaL_register(L, NULL, rava_pipe_meths);
   lua_pop(L, 1);
 
-  luaL_pushcfunction(L, rava_new_pipe);
+  lua_pushcfunction(L, rava_new_pipe);
 
   return 1;
 }

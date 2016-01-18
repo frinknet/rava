@@ -522,7 +522,7 @@ luaL_Reg rava_system_file_meths[] = {
   {NULL,        NULL}
 };
 
-LUA_API int loaopen_rava_system_fs(lua_State* L)
+LUA_API int luaopen_rava_system_fs(lua_State* L)
 {
   ravaL_module(L, RAVA_SYSTEM_FS,  rava_system_fs_funcs);
   ravaL_class(L, RAVA_SYSTEM_FILE, rava_system_file_meths);

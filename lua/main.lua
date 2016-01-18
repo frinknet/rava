@@ -5,7 +5,7 @@ gen = require("gen")
 
 -- set version
 APPNAME = "Rava Micro-Service Compiler"
-VERSION = "2.0.1"
+VERSION = "2.0.3"
 OPLEVEL = 1
 RAVABIN = arg[0]
 
@@ -117,8 +117,6 @@ end)
 
 -- Generate bytecode object
 opt.add("bytecode=name", "Generate a lua file to bytecode object", function(name, file, ...)
-	local arg = {...}
-
 	if file == nil then
 		msg.format("%s v%s - %s\n", APPNAME, VERSION, jit.version)
 		msg.indent("Usage: "..RAVABIN:gsub("^.*/", "").." --bytecode [opt]\n")
@@ -126,19 +124,27 @@ opt.add("bytecode=name", "Generate a lua file to bytecode object", function(name
 		msg.line()
 	end
 
-	file = file:gsub("^%./",""):gsub("^/","")
-
 	if name == true then
 		name = file:gsub("%..-$", ""):gsub("/",".")
 	end
 
 	gen.bytecode("-n", name, file, ...)
+
 	os.exit(0)
 end)
 
 -- Generate binary data store
-opt.add("filestore=name", "Generate a lua data store of binary files", function(name, store, ...)
-	gen.filestore(name, store, ...)
+opt.add("filestore=name", "Generate a lua data store of binary files", function(name, file, ...)
+	if file == nil then
+		return opt.run("h")
+	end
+
+	if name == true then
+		name = file:gsub("%..-$", "")
+	end
+
+	gen.filestore(name, file, ...)
+
 	os.exit(0)
 end)
 
