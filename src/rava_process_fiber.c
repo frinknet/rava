@@ -91,9 +91,9 @@ rava_fiber_t* ravaL_fiber_create(rava_state_t* outer, int narg)
   lua_insert(L, base);                             /* [fiber, thread, fiber] */
   lua_rawset(L, LUA_REGISTRYINDEX);                /* [fiber] */
 
-  while (outer->type != RAVA_TTHREAD) outer = outer->outer;
+  while (outer->type != RAVA_STATE_TYPE_THREAD) outer = outer->outer;
 
-  self->type  = RAVA_TFIBER;
+  self->type  = RAVA_STATE_TYPE_FIBER;
   self->outer = outer;
   self->L     = L1;
   self->flags = 0;
@@ -129,7 +129,7 @@ static int rava_fiber_join(lua_State* L)
 
   TRACE("calling ravaL_state_suspend on %p\n", curr);
 
-  if (curr->type == RAVA_TFIBER) {
+  if (curr->type == RAVA_STATE_TYPE_FIBER) {
     return ravaL_state_suspend(curr);
 	} else {
     ravaL_state_suspend(curr);
@@ -154,6 +154,10 @@ static int rava_fiber_free(lua_State* L)
   return 1;
 }
 
+static int rava_fiber_yield(lua_State* L)
+{
+}
+
 static int rava_fiber_tostring(lua_State* L)
 {
   rava_fiber_t* self = (rava_fiber_t*)lua_touserdata(L, 1);
@@ -170,17 +174,18 @@ luaL_Reg rava_fiber_meths[] = {
   {NULL,        NULL}
 };
 
-
 LUA_API int luaopen_rava_process_fiber(lua_State* L)
 {
-  ravaL_class(L, RAVA_PROCESS, rava_fiber_meths);
-  /* borrow coroutine.yield (fast on LJ2) */
-  lua_getglobal(L, "coroutine");
-  lua_getfield(L, -1, "yield");
-  lua_setfield(L, -3, "yield");
-  lua_pop(L, 1); /* coroutine */
+	ravaL_class(L, RAVA_PROCESS_FIBER, rava_fiber_meths);
+
+	///* borrow coroutine.yield (fast on LJ2) */
+	lua_getglobal(L, "coroutine");
+	lua_getfield(L, -1, "yield");
+	lua_setfield(L, -3, "yield");
+	lua_pop(L, 1);
+	lua_pop(L, 1);
 
 	lua_pushcfunction(L, rava_new_fiber);
 
-  return 1;
+	return 1;
 }

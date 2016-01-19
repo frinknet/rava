@@ -85,8 +85,8 @@ typedef struct rava_fiber_s  rava_fiber_t;
 typedef struct rava_thread_s rava_thread_t;
 
 typedef enum {
-  RAVA_TFIBER,
-  RAVA_TTHREAD
+  RAVA_STATE_TYPE_FIBER,
+  RAVA_STATE_TYPE_THREAD
 } rava_state_type;
 
 #define RAVA_STATE_FIELDS \

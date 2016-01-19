@@ -21,7 +21,7 @@ static int rava_pipe_open(lua_State* L)
   rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_SOCKET_PIPE);
   uv_file fh;
   if (lua_isuserdata(L, 2)) {
-    rava_object_t* file = (rava_object_t*)luaL_checkudata(L, 2, RAVA_SYSTEM_FILE);
+    rava_object_t* file = (rava_object_t*)luaL_checkudata(L, 2, RAVA_FILE);
     fh = file->h.file;
   }
   else {

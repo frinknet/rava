@@ -155,10 +155,10 @@ rava_thread_t* ravaL_thread_self(lua_State* L)
 {
   rava_state_t* self = ravaL_state_self(L);
 
-  if (self->type == RAVA_TTHREAD) {
+  if (self->type == RAVA_STATE_TYPE_THREAD) {
     return (rava_thread_t*)self;
   } else {
-    while (self->type != RAVA_TTHREAD) self = self->outer;
+    while (self->type != RAVA_STATE_TYPE_THREAD) self = self->outer;
 
     return (rava_thread_t*)self;
   }
@@ -235,7 +235,7 @@ int ravaL_thread_once(rava_thread_t* self)
 
             ravaL_state_ready(s);
 
-            if (s->type == RAVA_TFIBER) {
+            if (s->type == RAVA_STATE_TYPE_FIBER) {
               lua_checkstack(fiber->L, 1);
               lua_checkstack(s->L, narg);
 
@@ -273,32 +273,6 @@ int ravaL_thread_loop(rava_thread_t* self)
   return 0;
 }
 
-void ravaL_thread_init_main(lua_State* L)
-{
-  rava_thread_t* self = (rava_thread_t*)lua_newuserdata(L, sizeof(rava_thread_t));
-
-  luaL_getmetatable(L, RAVA_PROCESS_THREAD);
-  lua_setmetatable(L, -2);
-
-  self->type  = RAVA_TTHREAD;
-  self->flags = RAVA_STATE_READY;
-  self->loop  = uv_default_loop();
-  self->curr  = (rava_state_t*)self;
-  self->L     = L;
-  self->outer = (rava_state_t*)self;
-  self->data  = NULL;
-  self->tid   = (uv_thread_t)uv_thread_self();
-
-  QUEUE_INIT(&self->rouse);
-
-  uv_async_init(self->loop, &self->async, _async_cb);
-  uv_unref((uv_handle_t*)&self->async);
-
-  lua_pushthread(L);
-  lua_pushvalue(L, -2);
-  lua_rawset(L, LUA_REGISTRYINDEX);
-}
-
 rava_thread_t* ravaL_thread_create(rava_state_t* outer, int narg)
 {
   lua_State* L = outer->L;
@@ -312,7 +286,7 @@ rava_thread_t* ravaL_thread_create(rava_state_t* outer, int narg)
   lua_setmetatable(L, -2);
   lua_insert(L, base++);
 
-  self->type  = RAVA_TTHREAD;
+  self->type  = RAVA_STATE_TYPE_THREAD;
   self->flags = RAVA_STATE_READY;
   self->loop  = uv_loop_new();
   self->curr  = (rava_state_t*)self;
@@ -400,6 +374,7 @@ LUA_API int luaopen_rava_process_thread(lua_State* L)
 {
   ravaL_class(L, RAVA_PROCESS_THREAD, rava_thread_meths);
   lua_pop(L, 1);
+
 	lua_pushcfunction(L, rava_new_thread);
 
   return 1;

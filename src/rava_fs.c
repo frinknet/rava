@@ -1,6 +1,6 @@
 #include "rava.h"
 #include "rava_core.h"
-#include "rava_system_fs.h"
+#include "rava_fs.h"
 
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -76,7 +76,7 @@ static void _push_stats_table(lua_State* L, struct stat* s)
 #endif
 }
 
-static void rava_system_fs_result(lua_State* L, uv_fs_t* req)
+static void rava_fs_result(lua_State* L, uv_fs_t* req)
 {
   TRACE("enter fs result...\n");
 
@@ -107,7 +107,7 @@ static void rava_system_fs_result(lua_State* L, uv_fs_t* req)
 
       case UV_FS_OPEN:
         {
-          rava_object_t* self = (rava_object_t*)luaL_checkudata(L, -1, RAVA_SYSTEM_FILE);
+          rava_object_t* self = (rava_object_t*)luaL_checkudata(L, -1, RAVA_FILE);
           self->h.file = req->result;
         }
 
@@ -165,14 +165,14 @@ static void rava_system_fs_result(lua_State* L, uv_fs_t* req)
   uv_fs_req_cleanup(req);
 }
 
-static void rava_system_fs_cb(uv_fs_t* req)
+static void rava_fs_cb(uv_fs_t* req)
 {
   rava_state_t* state = container_of(req, rava_state_t, req);
-  rava_system_fs_result(state->L, req);
+  rava_fs_result(state->L, req);
   ravaL_state_ready(state);
 }
 
-static int rava_system_fs_open(lua_State* L)
+static int rava_fs_open(lua_State* L)
 {
   rava_state_t*  curr = ravaL_state_self(L);
   const char*   path = luaL_checkstring(L, 1);
@@ -185,7 +185,7 @@ static int rava_system_fs_open(lua_State* L)
 
   self = (rava_object_t*)lua_newuserdata(L, sizeof(rava_object_t));
 
-  luaL_getmetatable(L, RAVA_SYSTEM_FILE);
+  luaL_getmetatable(L, RAVA_FILE);
   lua_setmetatable(L, -2);
   ravaL_object_init(curr, self);
 
@@ -194,7 +194,7 @@ static int rava_system_fs_open(lua_State* L)
   RAVA_FS_CALL(L, open, NULL, path, flags, mode);
 }
 
-static int rava_system_fs_unlink(lua_State* L)
+static int rava_fs_unlink(lua_State* L)
 {
   const char* path = luaL_checkstring(L, 1);
 
@@ -202,7 +202,7 @@ static int rava_system_fs_unlink(lua_State* L)
   RAVA_FS_CALL(L, unlink, NULL, path);
 }
 
-static int rava_system_fs_mkdir(lua_State* L)
+static int rava_fs_mkdir(lua_State* L)
 {
   const char*  path = luaL_checkstring(L, 1);
   int mode = strtoul(luaL_checkstring(L, 2), NULL, 8);
@@ -211,7 +211,7 @@ static int rava_system_fs_mkdir(lua_State* L)
   RAVA_FS_CALL(L, mkdir, NULL, path, mode);
 }
 
-static int rava_system_fs_rmdir(lua_State* L)
+static int rava_fs_rmdir(lua_State* L)
 {
   const char*  path = luaL_checkstring(L, 1);
 
@@ -219,7 +219,7 @@ static int rava_system_fs_rmdir(lua_State* L)
   RAVA_FS_CALL(L, rmdir, NULL, path);
 }
 
-static int rava_system_fs_scandir(lua_State* L)
+static int rava_fs_scandir(lua_State* L)
 {
   const char* path = luaL_checkstring(L, 1);
 
@@ -227,7 +227,7 @@ static int rava_system_fs_scandir(lua_State* L)
   RAVA_FS_CALL(L, scandir, NULL, path, 0);
 }
 
-static int rava_system_fs_stat(lua_State* L)
+static int rava_fs_stat(lua_State* L)
 {
   const char* path = luaL_checkstring(L, 1);
 
@@ -235,7 +235,7 @@ static int rava_system_fs_stat(lua_State* L)
   RAVA_FS_CALL(L, stat, NULL, path);
 }
 
-static int rava_system_fs_rename(lua_State* L)
+static int rava_fs_rename(lua_State* L)
 {
   const char* old_path = luaL_checkstring(L, 1);
   const char* new_path = luaL_checkstring(L, 2);
@@ -244,10 +244,10 @@ static int rava_system_fs_rename(lua_State* L)
   RAVA_FS_CALL(L, rename, NULL, old_path, new_path);
 }
 
-static int rava_system_fs_sendfile(lua_State* L)
+static int rava_fs_sendfile(lua_State* L)
 {
-  rava_object_t* o_file = (rava_object_t*)luaL_checkudata(L, 1, RAVA_SYSTEM_FILE);
-  rava_object_t* i_file = (rava_object_t*)luaL_checkudata(L, 2, RAVA_SYSTEM_FILE);
+  rava_object_t* o_file = (rava_object_t*)luaL_checkudata(L, 1, RAVA_FILE);
+  rava_object_t* i_file = (rava_object_t*)luaL_checkudata(L, 2, RAVA_FILE);
   off_t  ofs = luaL_checkint(L, 3);
   size_t len = luaL_checkint(L, 4);
 
@@ -255,7 +255,7 @@ static int rava_system_fs_sendfile(lua_State* L)
   RAVA_FS_CALL(L, sendfile, NULL, o_file->h.file, i_file->h.file, ofs, len);
 }
 
-static int rava_system_fs_chmod(lua_State* L)
+static int rava_fs_chmod(lua_State* L)
 {
   const char* path = luaL_checkstring(L, 1);
   int mode = strtoul(luaL_checkstring(L, 2), NULL, 8);
@@ -264,7 +264,7 @@ static int rava_system_fs_chmod(lua_State* L)
   RAVA_FS_CALL(L, chmod, NULL, path, mode);
 }
 
-static int rava_system_fs_utime(lua_State* L)
+static int rava_fs_utime(lua_State* L)
 {
   const char* path = luaL_checkstring(L, 1);
   double atime = luaL_checknumber(L, 2);
@@ -274,7 +274,7 @@ static int rava_system_fs_utime(lua_State* L)
   RAVA_FS_CALL(L, utime, NULL, path, atime, mtime);
 }
 
-static int rava_system_fs_lstat(lua_State* L)
+static int rava_fs_lstat(lua_State* L)
 {
   const char* path = luaL_checkstring(L, 1);
 
@@ -282,7 +282,7 @@ static int rava_system_fs_lstat(lua_State* L)
   RAVA_FS_CALL(L, lstat, NULL, path);
 }
 
-static int rava_system_fs_link(lua_State* L)
+static int rava_fs_link(lua_State* L)
 {
   const char* src_path = luaL_checkstring(L, 1);
   const char* dst_path = luaL_checkstring(L, 2);
@@ -291,7 +291,7 @@ static int rava_system_fs_link(lua_State* L)
   RAVA_FS_CALL(L, link, NULL, src_path, dst_path);
 }
 
-static int rava_system_fs_symlink(lua_State* L)
+static int rava_fs_symlink(lua_State* L)
 {
   const char* src_path = luaL_checkstring(L, 1);
   const char* dst_path = luaL_checkstring(L, 2);
@@ -301,7 +301,7 @@ static int rava_system_fs_symlink(lua_State* L)
   RAVA_FS_CALL(L, symlink, NULL, src_path, dst_path, flags);
 }
 
-static int rava_system_fs_readlink(lua_State* L)
+static int rava_fs_readlink(lua_State* L)
 {
   const char* path = luaL_checkstring(L, 1);
 
@@ -309,7 +309,7 @@ static int rava_system_fs_readlink(lua_State* L)
   RAVA_FS_CALL(L, readlink, NULL, path);
 }
 
-static int rava_system_fs_chown(lua_State* L)
+static int rava_fs_chown(lua_State* L)
 {
   const char* path = luaL_checkstring(L, 1);
   int uid = luaL_checkint(L, 2);
@@ -319,7 +319,7 @@ static int rava_system_fs_chown(lua_State* L)
   RAVA_FS_CALL(L, chown, NULL, path, uid, gid);
 }
 
-static int rava_system_fs_cwd(lua_State* L)
+static int rava_fs_cwd(lua_State* L)
 {
   char dir[RAVA_MAX_PATH];
   int r = uv_cwd(dir, (size_t*)RAVA_MAX_PATH);
@@ -333,7 +333,7 @@ static int rava_system_fs_cwd(lua_State* L)
   return 1;
 }
 
-static int rava_system_fs_chdir(lua_State* L)
+static int rava_fs_chdir(lua_State* L)
 {
   const char* dir = luaL_checkstring(L, 1);
   int r = uv_chdir(dir);
@@ -345,7 +345,7 @@ static int rava_system_fs_chdir(lua_State* L)
   return 0;
 }
 
-static int rava_system_fs_exepath(lua_State* L)
+static int rava_fs_exepath(lua_State* L)
 {
   char buffer[RAVA_MAX_PATH];
   size_t len = RAVA_MAX_PATH;
@@ -356,7 +356,7 @@ static int rava_system_fs_exepath(lua_State* L)
   return 1;
 }
 
-static int rava_system_fs_home(lua_State* L)
+static int rava_fs_home(lua_State* L)
 {
   char dir[RAVA_MAX_PATH];
   int r = uv_os_homedir(dir, (size_t*)RAVA_MAX_PATH);
@@ -370,40 +370,40 @@ static int rava_system_fs_home(lua_State* L)
   return 1;
 }
 
-static int rava_system_file_stat(lua_State* L)
+static int rava_file_stat(lua_State* L)
 {
-  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_SYSTEM_FILE);
+  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_FILE);
 
   lua_settop(L, 0);
   RAVA_FS_CALL(L, fstat, NULL, self->h.file);
 }
 
-static int rava_system_file_sync(lua_State* L)
+static int rava_file_sync(lua_State* L)
 {
-  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_SYSTEM_FILE);
+  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_FILE);
 
   lua_settop(L, 0);
   RAVA_FS_CALL(L, fsync, NULL, self->h.file);
 }
 
-static int rava_system_file_datasync(lua_State* L)
+static int rava_file_datasync(lua_State* L)
 {
-  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_SYSTEM_FILE);
+  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_FILE);
 
   lua_settop(L, 0);
   RAVA_FS_CALL(L, fdatasync, NULL, self->h.file);
 }
 
-static int rava_system_file_truncate(lua_State* L)
+static int rava_file_truncate(lua_State* L)
 {
-  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_SYSTEM_FILE);
+  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_FILE);
   off_t ofs = luaL_checkint(L, 2);
 
   lua_settop(L, 0);
   RAVA_FS_CALL(L, ftruncate, NULL, self->h.file, ofs);
 }
 
-static int rava_system_file_utime(lua_State* L)
+static int rava_file_utime(lua_State* L)
 {
   const char* path = luaL_checkstring(L, 1);
   double atime = luaL_checknumber(L, 2);
@@ -414,18 +414,18 @@ static int rava_system_file_utime(lua_State* L)
   RAVA_FS_CALL(L, utime, NULL, path, atime, mtime);
 }
 
-static int rava_system_file_chmod(lua_State* L)
+static int rava_file_chmod(lua_State* L)
 {
-  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_SYSTEM_FILE);
+  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_FILE);
   int mode = strtoul(luaL_checkstring(L, 2), NULL, 8);
 
   lua_settop(L, 0);
   RAVA_FS_CALL(L, fchmod, NULL, self->h.file, mode);
 }
 
-static int rava_system_file_chown(lua_State* L)
+static int rava_file_chown(lua_State* L)
 {
-  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_SYSTEM_FILE);
+  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_FILE);
   int uid = luaL_checkint(L, 2);
   int gid = luaL_checkint(L, 3);
 
@@ -433,9 +433,9 @@ static int rava_system_file_chown(lua_State* L)
   RAVA_FS_CALL(L, fchown, NULL, self->h.file, uid, gid);
 }
 
-static int rava_system_file_read(lua_State *L)
+static int rava_file_read(lua_State *L)
 {
-  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_SYSTEM_FILE);
+  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_FILE);
 
   size_t  len = luaL_optint(L, 2, RAVA_BUF_SIZE);
   int64_t ofs = luaL_optint(L, 3, -1);
@@ -445,9 +445,9 @@ static int rava_system_file_read(lua_State *L)
   RAVA_FS_CALL(L, read, buf, self->h.file, buf, len, ofs);
 }
 
-static int rava_system_file_write(lua_State *L)
+static int rava_file_write(lua_State *L)
 {
-  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_SYSTEM_FILE);
+  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_FILE);
 
   size_t   len;
   void*    buf = (void*)luaL_checklstring(L, 2, &len);
@@ -457,15 +457,15 @@ static int rava_system_file_write(lua_State *L)
   RAVA_FS_CALL(L, write, NULL, self->h.file, buf, len, ofs);
 }
 
-static int rava_system_file_close(lua_State *L)
+static int rava_file_close(lua_State *L)
 {
-  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_SYSTEM_FILE);
+  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_FILE);
 
   lua_settop(L, 0);
   RAVA_FS_CALL(L, close, NULL, self->h.file);
 }
 
-static int rava_system_file_free(lua_State *L)
+static int rava_file_free(lua_State *L)
 {
   rava_object_t* self = (rava_object_t*)lua_touserdata(L, 1);
 
@@ -474,58 +474,58 @@ static int rava_system_file_free(lua_State *L)
   return 0;
 }
 
-static int rava_system_file_tostring(lua_State *L)
+static int rava_file_tostring(lua_State *L)
 {
-  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_SYSTEM_FILE);
+  rava_object_t* self = (rava_object_t*)luaL_checkudata(L, 1, RAVA_FILE);
 
-  lua_pushfstring(L, "userdata<%s>: %p", RAVA_SYSTEM_FILE, self);
+  lua_pushfstring(L, "userdata<%s>: %p", RAVA_FILE, self);
 
   return 1;
 }
 
-luaL_Reg rava_system_fs_funcs[] = {
-  {"open",        rava_system_fs_open},
-  {"unlink",      rava_system_fs_unlink},
-  {"mkdir",       rava_system_fs_mkdir},
-  {"rmdir",       rava_system_fs_rmdir},
-  {"scandir",     rava_system_fs_scandir},
-  {"stat",        rava_system_fs_stat},
-  {"rename",      rava_system_fs_rename},
-  {"sendfile",    rava_system_fs_sendfile},
-  {"chmod",       rava_system_fs_chmod},
-  {"chown",       rava_system_fs_chown},
-  {"utime",       rava_system_fs_utime},
-  {"lstat",       rava_system_fs_lstat},
-  {"link",        rava_system_fs_link},
-  {"symlink",     rava_system_fs_symlink},
-  {"readlink",    rava_system_fs_readlink},
-  {"cwd",         rava_system_fs_cwd},
-  {"chdir",       rava_system_fs_chdir},
-  {"exepath",     rava_system_fs_exepath},
-  {"home",        rava_system_fs_home},
+luaL_Reg rava_fs_funcs[] = {
+  {"open",        rava_fs_open},
+  {"unlink",      rava_fs_unlink},
+  {"mkdir",       rava_fs_mkdir},
+  {"rmdir",       rava_fs_rmdir},
+  {"scandir",     rava_fs_scandir},
+  {"stat",        rava_fs_stat},
+  {"rename",      rava_fs_rename},
+  {"sendfile",    rava_fs_sendfile},
+  {"chmod",       rava_fs_chmod},
+  {"chown",       rava_fs_chown},
+  {"utime",       rava_fs_utime},
+  {"lstat",       rava_fs_lstat},
+  {"link",        rava_fs_link},
+  {"symlink",     rava_fs_symlink},
+  {"readlink",    rava_fs_readlink},
+  {"cwd",         rava_fs_cwd},
+  {"chdir",       rava_fs_chdir},
+  {"exepath",     rava_fs_exepath},
+  {"home",        rava_fs_home},
   {NULL,          NULL}
 };
 
-luaL_Reg rava_system_file_meths[] = {
-  {"read",      rava_system_file_read},
-  {"write",     rava_system_file_write},
-  {"close",     rava_system_file_close},
-  {"stat",      rava_system_file_stat},
-  {"sync",      rava_system_file_sync},
-  {"utime",     rava_system_file_utime},
-  {"chmod",     rava_system_file_chmod},
-  {"chown",     rava_system_file_chown},
-  {"datasync",  rava_system_file_datasync},
-  {"truncate",  rava_system_file_truncate},
-  {"__gc",      rava_system_file_free},
-  {"__tostring",rava_system_file_tostring},
+luaL_Reg rava_file_meths[] = {
+  {"read",      rava_file_read},
+  {"write",     rava_file_write},
+  {"close",     rava_file_close},
+  {"stat",      rava_file_stat},
+  {"sync",      rava_file_sync},
+  {"utime",     rava_file_utime},
+  {"chmod",     rava_file_chmod},
+  {"chown",     rava_file_chown},
+  {"datasync",  rava_file_datasync},
+  {"truncate",  rava_file_truncate},
+  {"__gc",      rava_file_free},
+  {"__tostring",rava_file_tostring},
   {NULL,        NULL}
 };
 
-LUA_API int luaopen_rava_system_fs(lua_State* L)
+LUA_API int luaopen_rava_fs(lua_State* L)
 {
-  ravaL_module(L, RAVA_SYSTEM_FS,  rava_system_fs_funcs);
-  ravaL_class(L, RAVA_SYSTEM_FILE, rava_system_file_meths);
+  ravaL_module(L, RAVA_FS,  rava_fs_funcs);
+  ravaL_class(L, RAVA_FILE, rava_file_meths);
   lua_pop(L, 1);
 
   return 1;

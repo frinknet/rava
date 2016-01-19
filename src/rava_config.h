@@ -1,6 +1,9 @@
 #define RAVA_CORE           "rava.core"
 #define RAVA_CORE_STREAM    "rava.core.stream"
 
+#define RAVA_FS             "rava.fs"
+#define RAVA_FILE           "rava.fs.file"
+
 #define RAVA_PROCESS        "rava.process"
 #define RAVA_PROCESS_COND   "rava.process.cond"
 #define RAVA_PROCESS_FIBER  "rava.process.fiber"
@@ -15,8 +18,6 @@
 #define RAVA_SOCKET_UDP     "rava.socket.udp"
 
 #define RAVA_SYSTEM         "rava.system"
-#define RAVA_SYSTEM_FS      "rava.system.fs"
-#define RAVA_SYSTEM_FILE    "rava.system.fs.file"
 
 /* state flags */
 #define RAVA_STATE_START (1 << 0)

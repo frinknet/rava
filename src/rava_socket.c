@@ -110,9 +110,6 @@ static int rava_dns_resolve(lua_State* L)
 }
 
 luaL_Reg rava_socket_funcs[] = {
-  {"pipe",        rava_new_pipe},
-  {"tcp",         rava_new_tcp},
-  {"udp",         rava_new_udp},
   {"dnsresolve",  rava_dns_resolve},
   {NULL,          NULL}
 };
@@ -122,9 +119,13 @@ LUA_API int luaopen_rava_socket(lua_State* L)
 	ravaL_module(L, RAVA_SOCKET, rava_socket_funcs);
 
 	luaopen_rava_socket_pipe(L);
+	lua_setfield(L, -2, "pipe");
+
 	luaopen_rava_socket_udp(L);
+	lua_setfield(L, -2, "udp");
+
 	luaopen_rava_socket_tcp(L);
-	lua_pop(L, 3);
+	lua_setfield(L, -2, "tcp");
 
 	return 1;
 }

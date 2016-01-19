@@ -1,9 +1,11 @@
 -- provide instanciated inbuilt libs
-rava = require("gen")
-opt  = require("opt")
-msg  = require("msg")
-rava  = require("rava")
-ray  = require("ray")
+gen = require("gen")
+opt = require("opt")
+msg = require("msg")
+
+proc = require("rava.process")
+sock = require("rava.socket")
+syst = require("rava.system")
 
 -- start the main file
 require("main")

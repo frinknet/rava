@@ -5,6 +5,10 @@
 #include "lauxlib.h"
 #include "rava.h"
 
+LUA_API int luaopen_rava_process(lua_State *L);
+LUA_API int luaopen_rava_socket(lua_State *L);
+LUA_API int luaopen_rava_system(lua_State *L);
+
 /**
  * Create a lua container from and run the lua code you pass to it
  *
@@ -26,6 +30,18 @@ lua_State* rava_newlua() {
 	lua_remove(L, -2); // Remove package
 	
 	// Store rava module definition at preload.rava
+	lua_pushcfunction(L, luaopen_rava);
+	lua_setfield(L, -2, "rava");
+
+	lua_pushcfunction(L, luaopen_rava_process);
+	lua_setfield(L, -2, "rava.process");
+
+	lua_pushcfunction(L, luaopen_rava_socket);
+	lua_setfield(L, -2, "rava.socket");
+
+	lua_pushcfunction(L, luaopen_rava_system);
+	lua_setfield(L, -2, "rava.system");
+
 	lua_pushcfunction(L, luaopen_rava);
 	lua_setfield(L, -2, "rava");
 

@@ -6,11 +6,11 @@
     uv_fs_cb     cb; \
     req = &curr->req.fs; \
 		\
-    if (curr->type == RAVA_TTHREAD) { \
+    if (curr->type == RAVA_STATE_TYPE_THREAD) { \
       /* synchronous in main */ \
       cb = NULL; \
 		} else { \
-      cb = rava_system_fs_cb; \
+      cb = rava_fs_cb; \
     } \
     req->data = misc; \
     \
@@ -22,8 +22,8 @@
       lua_pushstring(L, uv_strerror(r)); \
     } \
 		\
-    if (curr->type == RAVA_TTHREAD) { \
-      rava_system_fs_result(L, req); \
+    if (curr->type == RAVA_STATE_TYPE_THREAD) { \
+      rava_fs_result(L, req); \
 			\
       return lua_gettop(L); \
 		} else { \
@@ -33,4 +33,4 @@
     } \
   } while(0)
 
-LUA_API int luaopen_rava_system_fs(lua_State* L);
+LUA_API int luaopen_rava_fs(lua_State* L);

@@ -4,6 +4,7 @@ RAVA_SRC=\
 	rava_core_state.c \
 	rava_core_stream.c \
 	rava_core.c \
+	rava_fs.c \
 	rava_process_cond.c \
 	rava_process_fiber.c \
 	rava_process_idle.c \
@@ -15,7 +16,6 @@ RAVA_SRC=\
 	rava_socket_tcp.c \
 	rava_socket_udp.c \
 	rava_socket.c \
-	rava_system_fs.c \
 	rava_system.c \
 	rava.c
 RAVA_OBJ=$(RAVA_SRC:.c=.o)
@@ -40,6 +40,10 @@ rava.so: librava.a
 librava.a: $(RAVA_OBJ) $(RAVA_INC)
 	@echo LD $+ -o $@
 	@$(LD) -r -static $+ -o $@
+
+ravafs.so: librava.a
+	@echo CC $+ -o $@
+	@$(CC) -shared $(CCARGS) $+ -o $@
 
 .c.o:
 	@echo CC $< -o $@
