@@ -41,10 +41,6 @@ librava.a: $(RAVA_OBJ) $(RAVA_INC)
 	@echo LD $+ -o $@
 	@$(LD) -r -static $+ -o $@
 
-ravafs.so: librava.a
-	@echo CC $+ -o $@
-	@$(CC) -shared $(CCARGS) $+ -o $@
-
 .c.o:
 	@echo CC $< -o $@
 	@$(CC) -fPIC -c $(CCARGS) $<

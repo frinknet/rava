@@ -42,23 +42,15 @@ LUA_API int luaopen_rava(lua_State *L)
 	ravaL_module(L, "rava", rava_funcs);
 
 	luaopen_rava_fs(L);
-	printf("stack: %d\n", lua_gettop(L));
-
 	lua_setfield(L, -2, "fs");
 
 	luaopen_rava_socket(L);
-	printf("stack: %d\n", lua_gettop(L));
-
 	lua_setfield(L, -2, "sock");
 
 	luaopen_rava_system(L);
-	printf("stack: %d\n", lua_gettop(L));
-
 	lua_setfield(L, -2, "sys");
 
 	luaopen_rava_process(L);
-	printf("stack: %d\n", lua_gettop(L));
-
 	lua_setfield(L, -2, "proc");
 
 	return 1;

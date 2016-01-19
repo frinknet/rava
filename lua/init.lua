@@ -3,10 +3,8 @@ gen = require("gen")
 opt = require("opt")
 msg = require("msg")
 
-fs      = require("rava.fs")
-process = require("rava.process")
-socket  = require("rava.socket")
-system  = require("rava.system")
+rava = require("rava")
 
--- start the main file
-require("main")
+for v, f in pairs(rava) do
+	_G[v] = f
+end

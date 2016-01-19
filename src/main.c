@@ -38,16 +38,13 @@ lua_State* rava_newlua() {
 	lua_setfield(L, -2, "rava.fs");
 
 	lua_pushcfunction(L, luaopen_rava_process);
-	lua_setfield(L, -2, "rava.process");
+	lua_setfield(L, -2, "rava.proc");
 
 	lua_pushcfunction(L, luaopen_rava_socket);
-	lua_setfield(L, -2, "rava.socket");
+	lua_setfield(L, -2, "rava.sock");
 
 	lua_pushcfunction(L, luaopen_rava_system);
-	lua_setfield(L, -2, "rava.system");
-
-	lua_pushcfunction(L, luaopen_rava);
-	lua_setfield(L, -2, "rava");
+	lua_setfield(L, -2, "rava.sys");
 
 	return L;
 }
@@ -77,6 +74,10 @@ int main(int argc, char *argv[])
 	lua_setglobal(L, "arg");
 
 	int r = luaL_dostring(L, "require \"init\"");
+
+	if (r == 0) {
+		int r = luaL_dostring(L, "require \"main\"");
+	}
 
 	if (r != 0) {
 		printf("%s\n", lua_tolstring(L, -1, 0));

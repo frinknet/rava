@@ -1,5 +1,6 @@
 libs
 rava
+*.so
 *.o
 *.a
 *~

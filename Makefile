@@ -24,7 +24,11 @@ CCARGS=-Ilibs/luajit/ -Ilibs/libuv/ -lpthread
 CC=gcc
 LD=ld
 
-all: rava
+all: rava rava.so
+
+rava.so: deps-rava
+	@echo CP $@
+	@cp src/rava.so .
 
 rava: deps-rava
 	@echo RV --compile=rava
