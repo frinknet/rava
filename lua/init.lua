@@ -3,9 +3,10 @@ gen = require("gen")
 opt = require("opt")
 msg = require("msg")
 
-proc = require("rava.process")
-sock = require("rava.socket")
-syst = require("rava.system")
+fs      = require("rava.fs")
+process = require("rava.process")
+socket  = require("rava.socket")
+system  = require("rava.system")
 
 -- start the main file
 require("main")
