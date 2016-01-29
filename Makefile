@@ -32,10 +32,11 @@ rava.so: deps-rava
 
 rava: deps-rava
 	@echo RV --compile=rava
-	cd lua && ./rava.sh -q -csn --compile=../rava main.lua modules/*.lua
+	@cd lua && ./rava.sh -q -csn --compile=../rava main.lua modules/*.lua
+	@rm rava.a
 
 install: $(INSTALL_DEP)
-	@sudo IN $(INSTALL_BIN)/rava
+	@echo IN $(INSTALL_BIN)/rava
 	@sudo cp $(INSTALL_DEP) $(INSTALL_BIN)
 
 uninstall:
