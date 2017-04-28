@@ -51,6 +51,8 @@ RAVA_OBJS=\
 	lua/rava.a \
 	libs/ravastore.o
 
+RAVA=cd lua && ./rava.sh
+
 DPREFIX=$(DESTDIR)$(PREFIX)
 INSTALL_BIN=$(DPREFIX)/bin
 INSTALL_DEP=rava
@@ -68,7 +70,7 @@ rava.so: deps
 
 rava: deps
 	@echo RV --compile=rava
-	@cd lua && ./rava.sh -q -csn --compile=../rava main.lua modules/*.lua
+	@$(RAVA) -q -csn --compile=../rava main.lua modules/*.lua
 	@rm rava.a
 
 install: $(INSTALL_DEP)
@@ -112,17 +114,20 @@ deps-luajit: $(LUA_LIBS)
 deps-libuv: $(LUV_LIBS)
 
 $(RAVA_DEPS): $(LUA_LIBS) $(LUV_LIBS)
+	@echo "==== Building Librava ===="
 	@echo MK $@
 	@$(MAKE) -C src/
 
 $(RAVA_LIBS): $(RAVA_DEPS)
+	@echo "==== Cataloging Librava ===="
 	@echo MK $@
 	@cp $+ libs/
 
 $(RAVA_OBJS): $(RAVA_LIBS)
+	@echo "==== Building Lua Rava ===="
 	@echo MK lua/rava.a
-	@cd lua && ./rava.sh -q --bytecode=init init.lua init.lua.o
-	@cd lua && ./rava.sh -q --build=rava \
+	@$(RAVA) -q --bytecode=init init.lua init.lua.o
+	@$(RAVA) -q --build=rava \
 		init.lua.o \
 		gen.lua \
 		opt.lua \
@@ -130,9 +135,10 @@ $(RAVA_OBJS): $(RAVA_LIBS)
 		gen/bcsave.lua \
 		../libs/ravamain.a
 	@echo MK libs/ravastore.o
-	@cd lua && ./rava.sh -q --filestore=ravastore ../libs/ravastore.o rava.a
+	@$(RAVA) -q --filestore=ravastore ../libs/ravastore.o rava.a
 
 $(LUA_LIBS): $(LUA_DEPS)
+	@echo "==== Cataloging Luajit ===="
 	@echo MK libs/luajit/
 	@mkdir -p libs/luajit/
 	@echo CP $(LUA_DEPS) libs/luajit/
@@ -141,19 +147,18 @@ $(LUA_LIBS): $(LUA_DEPS)
 		libs/luajit/bcsave.lua
 
 $(LUA_DEPS):
-	@echo MK deps/luajit/
-	@$(MAKE) CFLAGS="-fPIC" -C deps/luajit/
+	@echo "==== Building Luajit ===="
+	@$(MAKE) CFLAGS="-fPIC" -C $(DIR_DEPS_LUA)
 
 $(LUV_LIBS): $(LUV_DEPS)
+	@echo "==== Cataloging Libuv ===="
 	@echo MK libs/libuv/
 	@mkdir -p libs/libuv/
 	@echo CP $(LUV_DEPS) libs/libuv/
 	@cp $(LUV_DEPS) libs/libuv/
 
 $(LUV_DEPS):
-	@echo AT deps/libuv/
-	@cd deps/libuv/ && ./autogen.sh
-	@echo CF deps/libuv/
-	@cd deps/libuv/ && ./configure
-	@echo MK deps/libuv/
-	@$(MAKE) CFLAGS="-fPIC" -C deps/libuv/
+	@echo "==== Building Libuv ===="
+	@cd $(DIR_DEPS_LUV) && ./autogen.sh
+	@cd $(DIR_DEPS_LUV) && ./configure
+	@$(MAKE) CFLAGS="-fPIC" -C $(DIR_DEPS_LUV)

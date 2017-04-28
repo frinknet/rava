@@ -18,9 +18,17 @@ RAVA_SRC=\
 	rava_socket.c \
 	rava_system.c \
 	rava.c
+
 RAVA_OBJ=$(RAVA_SRC:.c=.o)
-RAVA_GEN=librava.a rava.so ravamain.a
-RAVA_INC=../libs/luajit/libluajit.a ../libs/libuv/libuv.a
+
+RAVA_GEN=\
+	librava.a \
+	rava.so \
+	ravamain.a
+
+RAVA_INC=\
+	../libs/luajit/libluajit.a \
+	../libs/libuv/libuv.a
 
 CCARGS=-I../libs/luajit/ -I../libs/libuv/ -pthread -ldl -lm
 
