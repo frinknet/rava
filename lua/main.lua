@@ -323,7 +323,7 @@ gen.start = function(env)
 	end
 	
 	for _,mod in pairs(MODULES) do
-		require("modules."..mod)
+		require("opts."..mod)
 	end
 	
 	-- Run options
