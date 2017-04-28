@@ -90,10 +90,10 @@ msg.list = function(...)
 
 	msg.line()
 
-	if #ins > 1 then
-		lst(ins)
-	else
+	if #ins == 1 and type(ins[1]) == "table" then
 		lst(ins[1])
+	else
+		lst(ins)
 	end
 end
 

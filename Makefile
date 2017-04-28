@@ -69,8 +69,8 @@ rava.so: deps
 	@cp src/rava.so .
 
 rava: deps
-	@echo RV --compile=rava
-	@$(RAVA) -q -csn --compile=../rava main.lua modules/*.lua
+	@echo RV --binary=rava
+	@$(RAVA) -q -csn --binary=../rava main.lua modules/*.lua
 	@rm rava.a
 
 install: $(INSTALL_DEP)
@@ -127,7 +127,7 @@ $(RAVA_OBJS): $(RAVA_LIBS)
 	@echo "==== Building Lua Rava ===="
 	@echo MK lua/rava.a
 	@$(RAVA) -q --bytecode=init init.lua init.lua.o
-	@$(RAVA) -q --build=rava \
+	@$(RAVA) -q --library=rava \
 		init.lua.o \
 		gen.lua \
 		opt.lua \
