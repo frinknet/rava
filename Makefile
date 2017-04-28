@@ -26,11 +26,11 @@ LD=ld
 
 all: rava rava.so
 
-rava.so: deps-rava
+rava.so: deps
 	@echo CP $@
 	@cp src/rava.so .
 
-rava: deps-rava
+rava: deps
 	@echo RV --compile=rava
 	@cd lua && ./rava.sh -q -csn --compile=../rava main.lua modules/*.lua
 	@rm rava.a
