@@ -51,32 +51,10 @@ msg.info = function(...)
 end
 
 msg.list = function(...)
-	local lst = function(lst, tbl, val)
-		if type(tbl) == "table" then
-			msg.line()
-			for k, v in pairs(tbl) do
-				lst(lst, k, v)
-			end
-		else
-			local k = tostring(tbl)
-			local v = tostring(val)
-
-			if k ~= "" and v ~= "" then
-				k = k..": "
-			end
-
-			msg.format("\t%s%s\n", k, v)
-		end
-	end
-
-	msg.line()
-	lst(lst, {...})
-end
-
-msg.dump = function(...)
 	local ins = {...}
 	local objs = {}
-	local dmp = function(dmp, obj, name, ind)
+
+	local function lst(obj, name, ind)
 		local tp = type(obj)
 		local ind = ind or ""
 		local name = name or ""
@@ -84,10 +62,6 @@ msg.dump = function(...)
 
 		if tp == "string" or tp == "number" then
 			val = obj
-		end
-
-		if type(name) == "number" then
-			name = "["..name.."]"
 		end
 
 		msg.format("%s%s: %s\n", ind, name, val)
@@ -107,14 +81,17 @@ msg.dump = function(...)
 			table.insert(objs, obj)
 
 			for k, v in pairs(obj) do
-				dmp(dmp, v, k, ind.."\t")
+				lst(v, k, ind.."\t")
 			end
 		end
 	end
 
-	for i = 1, #ins do
-		msg.line()
-		dmp(dmp, ins[i], "dump["..i.."]")
+	msg.line()
+
+	if #ins > 1 then
+		lst(ins)
+	else
+		lst(ins[1])
 	end
 end
 
