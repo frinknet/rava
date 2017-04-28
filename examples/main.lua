@@ -1,2 +1,2 @@
-require 'test/inc'
-require "test.test"
+require 'examples/inc'
+require "examples.test"

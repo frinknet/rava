@@ -64,7 +64,9 @@ msg.list = function(...)
 			val = obj
 		end
 
-		msg.format("%s%s: %s\n", ind, name, val)
+		if #tostring(name) > 0 then
+			msg.format("%s%s: %s\n", ind, name, val)
+		end
 
 		if tp == "userdata" then
 			obj = getmetatable(obj)
@@ -81,7 +83,7 @@ msg.list = function(...)
 			table.insert(objs, obj)
 
 			for k, v in pairs(obj) do
-				lst(v, k, ind.."\t")
+				lst(v, k, ind.."  ")
 			end
 		end
 	end
@@ -92,6 +94,18 @@ msg.list = function(...)
 		lst(ins)
 	else
 		lst(ins[1])
+	end
+end
+
+msg.header = function()
+	msg.format("%s v%s\n", _G.APPNAME, _G.VERSION)
+
+	if _G.COPYNAME then
+		if _G.LICENSE then
+			msg.format("%s // ", _G.LICENSE)
+		end
+
+		msg.format("Copyright © %s %s\n", _G.COPYYEAR, _G.COPYNAME)
 	end
 end
 

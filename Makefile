@@ -2,18 +2,54 @@ VERSION=2.0.5
 
 export PREFIX=/usr/local
 
-LUA_DEPS=deps/luajit/src/luajit deps/luajit/src/*.h deps/luajit/src/libluajit.a \
-deps/luajit/src/jit/bcsave.lua
-LUA_LIBS=libs/luajit/luajit libs/luajit/lua.h libs/luajit/lualib.h \
-libs/luajit/luaconf.h libs/luajit/lauxlib.h libs/luajit/libluajit.a \
-libs/luajit/bcsave.lua
+DIR_DEPS=deps
+DIR_DEPS_LUA=$(DIR_DEPS)/luajit/src
+DIR_DEPS_LUV=$(DIR_DEPS)/libuv
 
-UV_DEPS=deps/libuv/.libs/libuv.a deps/libuv/src/queue.h deps/libuv/include/*.h
-UV_LIBS=libs/libuv/libuv.a libs/libuv/uv.h libs/libuv/queue.h
+DIR_LIBS=libs
+DIR_LIBS_LUA=$(DIR_LIBS)/luajit
+DIR_LIBS_LUV=$(DIR_LIBS)/libuv
 
-RAVA_DEPS=src/librava.a src/rava.so src/ravamain.a
-RAVA_LIBS=libs/ravamain.a libs/librava.a libs/rava.so
-RAVA_OBJS=lua/rava.a libs/ravastore.o
+DIR_LUA=lua
+
+LUA_DEPS=\
+	$(DIR_DEPS_LUA)/luajit \
+	$(DIR_DEPS_LUA)/*.h \
+	$(DIR_DEPS_LUA)/libluajit.a \
+	$(DIR_DEPS_LUA)/jit/bcsave.lua
+
+LUA_LIBS=\
+	$(DIR_LIBS_LUA)/luajit \
+	$(DIR_LIBS_LUA)/lua.h \
+	$(DIR_LIBS_LUA)/lualib.h \
+	$(DIR_LIBS_LUA)/luaconf.h \
+	$(DIR_LIBS_LUA)/lauxlib.h \
+	$(DIR_LIBS_LUA)/libluajit.a \
+	$(DIR_LIBS_LUA)/bcsave.lua
+
+LUV_DEPS=\
+	$(DIR_DEPS_LUV)/.libs/libuv.a \
+	$(DIR_DEPS_LUV)/src/queue.h \
+	$(DIR_DEPS_LUV)/include/*.h
+
+LUV_LIBS=\
+	$(DIR_LIBS_LUV)/libuv.a \
+	$(DIR_LIBS_LUV)/uv.h \
+	$(DIR_LIBS_LUV)/queue.h
+
+RAVA_DEPS=\
+	src/librava.a \
+	src/rava.so \
+	src/ravamain.a
+
+RAVA_LIBS=\
+	libs/ravamain.a \
+	libs/librava.a \
+	libs/rava.so
+
+RAVA_OBJS=\
+	lua/rava.a \
+	libs/ravastore.o
 
 DPREFIX=$(DESTDIR)$(PREFIX)
 INSTALL_BIN=$(DPREFIX)/bin
@@ -73,9 +109,9 @@ deps-git:
 deps-rava: deps-src $(RAVA_LIBS) $(RAVA_OBJS)
 deps-src: deps-libuv deps-luajit $(RAVA_DEPS)
 deps-luajit: $(LUA_LIBS)
-deps-libuv: $(UV_LIBS)
+deps-libuv: $(LUV_LIBS)
 
-$(RAVA_DEPS): $(LUA_LIBS) $(UV_LIBS)
+$(RAVA_DEPS): $(LUA_LIBS) $(LUV_LIBS)
 	@echo MK $@
 	@$(MAKE) -C src/
 
@@ -93,7 +129,7 @@ $(RAVA_OBJS): $(RAVA_LIBS)
 		msg.lua \
 		gen/bcsave.lua \
 		../libs/ravamain.a
-	echo MK libs/ravastore.o
+	@echo MK libs/ravastore.o
 	@cd lua && ./rava.sh -q --filestore=ravastore ../libs/ravastore.o rava.a
 
 $(LUA_LIBS): $(LUA_DEPS)
@@ -108,13 +144,13 @@ $(LUA_DEPS):
 	@echo MK deps/luajit/
 	@$(MAKE) CFLAGS="-fPIC" -C deps/luajit/
 
-$(UV_LIBS): $(UV_DEPS)
+$(LUV_LIBS): $(LUV_DEPS)
 	@echo MK libs/libuv/
 	@mkdir -p libs/libuv/
-	@echo CP $(UV_DEPS) libs/libuv/
-	@cp $(UV_DEPS) libs/libuv/
+	@echo CP $(LUV_DEPS) libs/libuv/
+	@cp $(LUV_DEPS) libs/libuv/
 
-$(UV_DEPS):
+$(LUV_DEPS):
 	@echo AT deps/libuv/
 	@cd deps/libuv/ && ./autogen.sh
 	@echo CF deps/libuv/

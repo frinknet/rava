@@ -5,7 +5,10 @@ gen = require("gen")
 
 -- set version
 APPNAME = "Rava Micro-Service Compiler"
-VERSION = "2.0.3"
+VERSION = "2.4.13"
+LICENSE = "MIT license"
+COPYYEAR = "2015-2017"
+COPYNAME = "FrinkNET and Lemurs"
 OPLEVEL = 1
 RAVABIN = arg[0]
 
@@ -16,7 +19,7 @@ end
 
 -- Help
 opt.add("h", "Show this help dialog", function(r)
-	msg.format("%s v%s - %s\n", APPNAME, VERSION, jit.version)
+	msg.header()
 	msg.line("\tUsage:\n")
 	msg.line("\t"..RAVABIN:gsub("^.*/", "").." [opt] files objects\n")
 	msg.line("\tOptions:\n")
@@ -87,11 +90,11 @@ opt.add("build=name", "Build a lua library from files", function(name, file, ...
 
 	name = name:gsub("%.[ao]$", ""):gsub("%.lua$", "")
 
-	msg.format("%s v%s - %s\n\nBuilding %s.a library from: ",
-		APPNAME, VERSION, jit.version, name)
+	msg.header()
+	msg.format("Building %s.a library from:\n\n", name)
 	msg.list(file, ...)
 	gen.build(name, file, ...)
-	msg.line()
+	msg.line("\n\n")
 
 	os.exit(0)
 end)
@@ -106,11 +109,11 @@ opt.add("compile=name", "Compile a binary from lua files", function(name, file, 
 		name = file:gsub("%..-$", "")
 	end
 
-	msg.format("%s v%s - %s\n\nCompiling %s from file: ",
-		APPNAME, VERSION, jit.version, name)
+	msg.header()
+	msg.format("Compiling %s from:\n\n", name)
 	msg.list(...)
 	gen.compile(name, file, ...)
-	msg.line()
+	msg.line("\n\n")
 
 	os.exit(0)
 end)
