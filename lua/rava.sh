@@ -1,4 +1,9 @@
-DIR="$(dirname $0)"
-LUAJIT="$DIR/../libs/luajit/luajit"
+LUADIR="$(dirname $0)"
+RAVDIR="$LUADIR/.."
+LIBDIR="$RAVDIR/libs"
+LUAJIT="$LIBDIR/luajit/luajit"
 
-LUA_PATH="$DIR/?.lua;?;?.lua;?.so" $LUAJIT $DIR/main.lua $@
+export LUA_PATH="./?.lua;$LUADIR/?.lua;$RAVDIR/?.lua;$RAVDIR/?.so"
+export RAVABIN=$0
+
+$LUAJIT $LUADIR/main.lua $@

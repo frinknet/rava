@@ -70,7 +70,10 @@ rava.so: deps
 
 rava: deps
 	@echo RV --binary=rava
-	@$(RAVA) -q -csn --binary=../rava main.lua modules/*.lua
+	@$(RAVA) -q -csn --binary=../rava \
+		main.lua \
+		modules/*.lua
+		gen/bcsave.lua \
 	@rm rava.a
 
 install: $(INSTALL_DEP)
@@ -125,14 +128,12 @@ $(RAVA_LIBS): $(RAVA_DEPS)
 
 $(RAVA_OBJS): $(RAVA_LIBS)
 	@echo "==== Building Lua Rava ===="
-	@echo MK lua/rava.a
+	@echo MK libs/ravamain.a
 	@$(RAVA) -q --bytecode=init init.lua init.lua.o
 	@$(RAVA) -q --library=rava \
 		init.lua.o \
-		gen.lua \
 		opt.lua \
 		msg.lua \
-		gen/bcsave.lua \
 		../libs/ravamain.a
 	@echo MK libs/ravastore.o
 	@$(RAVA) -q --filestore=ravastore ../libs/ravastore.o rava.a
