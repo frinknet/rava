@@ -11,6 +11,11 @@ opt.add("bytecode=name", "Generate a lua file to bytecode object", function(name
 		name = file:gsub("%..-$", ""):gsub("/",".")
 	end
 
+	msg.header()
+	msg.format("Compiling %s.o from:\n\n", name)
+	msg.list(file, ...)
+	msg.line("\n\n")
+
 	gen.bytecode("-n", name, file, ...)
 
 	os.exit(0)

@@ -10,9 +10,10 @@ opt.add("binary=name", "Compile a binary from lua files", function(name, file, .
 
 	msg.header()
 	msg.format("Compiling %s from:\n\n", name)
-	msg.list(...)
-	gen.compile(name, file, ...)
+	msg.list(file, ...)
 	msg.line("\n\n")
+
+	gen.compile(name, file, ...)
 
 	os.exit(0)
 end)

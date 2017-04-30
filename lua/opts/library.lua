@@ -13,8 +13,9 @@ opt.add("library=name", "Build a lua library from files", function(name, file, .
 	msg.header()
 	msg.format("Building %s.a library from:\n\n", name)
 	msg.list(file, ...)
-	gen.build(name, file, ...)
 	msg.line("\n\n")
+
+	gen.build(name, file, ...)
 
 	os.exit(0)
 end)
