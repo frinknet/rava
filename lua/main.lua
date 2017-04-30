@@ -1,6 +1,7 @@
 -- provide instanciated inbuilt libs
 opt = require "opt"
 msg = require "msg"
+gen = {}
 
 local bytecode = require "gen.bcsave"
 local preHooks = {}
@@ -8,7 +9,6 @@ local postHooks = {}
 local ccargs = os.getenv("CCARGS") or ""
 local mainobj
 local objs = {}
-local gen = {}
 
 -- check if file exists
 local function fileExists(file)

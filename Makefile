@@ -72,8 +72,8 @@ rava: deps
 	@echo RV --binary=rava
 	@$(RAVA) -q -csn --binary=../rava \
 		main.lua \
-		modules/*.lua
 		gen/bcsave.lua \
+		modules/*.lua
 	@rm rava.a
 
 install: $(INSTALL_DEP)
