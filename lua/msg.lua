@@ -107,6 +107,11 @@ msg.header = function()
 
 		msg.format("Copyright © %s %s\n", _G.COPYYEAR, _G.COPYNAME)
 	end
+
+	if _G.DESCRIPTION then
+			msg.indent(_G.DESCRIPTION.."\n")
+	end
+
 end
 
 module(...)
