@@ -15,11 +15,12 @@ opt.add("bytecode=name", "Generate a lua file to bytecode object", function(name
 	end
 
 	msg.header()
-	msg.format("Generating bytecode %s.o from:\n\n", file)
+	msg.format("\nGenerating bytecode %s.o from:\n", file)
 	msg.list(file, ...)
-	msg.line("\n\n")
 
 	gen.bytecode("-n", name, file, fileout, ...)
+
+	msg.line("\n")
 
 	os.exit(0)
 end)

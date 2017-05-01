@@ -11,11 +11,12 @@ opt.add("library=name", "Build a lua library from files", function(name, file, .
 	name = name:gsub("%.[ao]$", ""):gsub("%.lua$", "")
 
 	msg.header()
-	msg.format("Building %s.a library from:\n\n", name)
+	msg.format("\nBuilding %s.a library from:\n", name)
 	msg.list(file, ...)
-	msg.line("\n\n")
 
 	gen.build(name, file, ...)
+
+	msg.line("\n")
 
 	os.exit(0)
 end)

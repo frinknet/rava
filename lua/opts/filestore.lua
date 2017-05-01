@@ -9,11 +9,12 @@ opt.add("filestore=name", "Generate a lua data store of binary files", function(
 	end
 
 	msg.header()
-	msg.format("Packing file store %s.o from:\n\n", name)
+	msg.format("\nPacking file store %s.o from:\n", name)
 	msg.list(file, ...)
-	msg.line("\n\n")
 
 	gen.filestore(name, file, ...)
+
+	msg.line("\n")
 
 	os.exit(0)
 end)

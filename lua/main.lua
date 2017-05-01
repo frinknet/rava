@@ -80,7 +80,7 @@ local function generateCodeObject(file)
 
 		objfile = file..".o"
 
-		msg.info("Generating '"..name.."' = "..file)
+		msg.info("Storing '"..name.."'")
 
 		local ravacall = string.format("%s -q %s --bytecode=%s %s %s", RAVABIN, leavesym, name, "-", objfile)
 
@@ -215,13 +215,19 @@ gen.compile = function(name, ...)
 	--load Lua Code
 	gen.addFile(...)
 
-	msg.info("Compiling Binary... ")
+	msg.info("Loading 'gen.ravastore'")
+
+	local files = require("gen.ravastore")
+
+	msg.info("Generating "..name..".a")
 
 	local f, err = io.open(name..".a", "w+")
-	local files = require("gen"..".ravastore")
-
 	f:write(files["rava.a"])
 	f:close()
+
+	msg.done()
+
+	msg.info("Compiling Binary... ")
 
 	-- Construct compiler call
 	local ccall = string.format([[
@@ -268,6 +274,8 @@ gen.filestore = function(name, store, ...)
 			msg.fatal("Error reading " .. file)
 		end
 
+		msg.info("Adding file "..name)
+
 		-- add file entry to table
 		out:write(name..'["'..file..'"] = "')
 
@@ -282,6 +290,8 @@ gen.filestore = function(name, store, ...)
 
 		ins:close()
 		out:write('"\n')
+
+		msg.done()
 	end
 
 	-- add module code

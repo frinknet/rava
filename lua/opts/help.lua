@@ -1,6 +1,11 @@
 -- Help
 opt.add("h", "Show this help dialog", function(r)
 	msg.header()
+
+	if _G.DESCRIPTION then
+			msg.indent(_G.DESCRIPTION.."\n")
+	end
+
 	msg.line("\tUsage:\n")
 	msg.line("\t"..RAVABIN:gsub("^.*/", "").." [options] [files] [objects]\n")
 	msg.line("\tOptions:\n")

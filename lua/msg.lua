@@ -47,7 +47,7 @@ msg.warning = function(...)
 end
 
 msg.info = function(...)
-	msg.color(32, "info", ...)
+	msg.color(34, "info", ...)
 end
 
 msg.list = function(...)
@@ -58,14 +58,15 @@ msg.list = function(...)
 		local tp = type(obj)
 		local ind = ind or ""
 		local name = name or ""
-		local val = "["..tp.."]"
+		local val = ansiesc(32).."["..tp.."]"..ansiesc(0)
 
 		if tp == "string" or tp == "number" or tp == "boolean" then
 			val = obj
 		end
 
 		if #tostring(name) > 0 then
-			msg.format("%s%s: %s\n", ind, name, val)
+		
+			msg.format("%s%s: %s\n", ind, ansiesc(34)..name..ansiesc(0), val)
 		end
 
 		if tp == "userdata" then
@@ -107,11 +108,6 @@ msg.header = function()
 
 		msg.format("Copyright © %s %s\n", _G.COPYYEAR, _G.COPYNAME)
 	end
-
-	if _G.DESCRIPTION then
-			msg.indent(_G.DESCRIPTION.."\n")
-	end
-
 end
 
 module(...)

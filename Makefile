@@ -1,5 +1,3 @@
-VERSION=2.0.5
-
 export PREFIX=/usr/local
 
 DIR_DEPS=deps
@@ -66,7 +64,7 @@ MK:=$(MAKE) -C
 CL:=$(MAKE) clean -C
 
 EACH=utils/each.sh
-RAVA=cd lua && ../utils/rava.sh -q
+RAVA=cd lua && ../utils/rava.sh
 
 all: rava rava.so
 
@@ -80,17 +78,20 @@ rava: deps
 		main.lua \
 		config.lua \
 		gen/bcsave.lua \
+		gen/ravastore.lua \
 		opts/*.lua
 	@$(EACH) BINARY rava
 	@$(RAVA) -sc --binary=../rava \
 		main.lua \
 		config.lua \
 		gen/bcsave.lua \
+		gen/ravastore.lua \
 		opts/*.lua
 
 test: rava
 	@$(EACH) RAVA hello
-	@./rava --binary=hello example/hello.lua
+	@./rava --binary=hello \
+		example/hello.lua
 
 install: $(INSTALL_DEP)
 	@$(EACH) INSTALL $(INSTALL_BIN)/rava
@@ -124,12 +125,12 @@ $(RAVA_OBJS): $(RAVA_LIBS)
 		msg.lua \
 		../libs/ravamain.a
 	@$(EACH) RAVA \
-		 ../libs/ravastore.o \
-		 rava.a
+		../libs/ravastore.o \
+		rava.a
 	@$(EACH) FILESTORE libs/ravastore.o
 	@$(RAVA) --filestore=ravastore \
-		 ../libs/ravastore.o \
-		 rava.a
+		../libs/ravastore.o \
+		rava.a
 
 $(LUA_LIBS): $(LUA_DEPS)
 	@$(EACH) MD libs/luajit/
@@ -169,7 +170,7 @@ deps-src: deps-libuv deps-luajit $(RAVA_DEPS)
 deps-luajit: $(LUA_LIBS)
 deps-libuv: $(LUV_LIBS)
 
-clean: clean-rava
+clean: clean-rava clean-test
 	@$(EACH) RM libs/ rava*
 	@$(RM) libs/ rava*
 
@@ -190,3 +191,7 @@ clean-rava:
 	@$(RM) libs/ravastore.* lua/rava.a lua/*.o lua/opts/*.o
 	@$(EACH) CL src/
 	@$(CL) src/
+
+clean-test:
+	@$(EACH) RM hello* examples/*.o examples/*.a
+	@$(RM) hello* examples/*.o examples/*.a
