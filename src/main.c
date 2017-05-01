@@ -22,6 +22,8 @@ lua_State* rava_newlua() {
 
 	if (!L) {
 		printf("Error: LuaJIT unavailable!!\n");
+
+		return NULL;
 	}
 
 	// stop collector during initialization
