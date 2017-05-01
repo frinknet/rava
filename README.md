@@ -3,18 +3,14 @@ Rava Micro-Service Compiler
 # Building:
 ```
 make
-sudo make install
+make install
 ```
 
-Dependencies:
+## Build Dependencies:
 - gcc
-- LuaJIT + Development headers.
+- ld
+- gnumake
+- bash
 
 # License:
 MIT
-
-DOSA
-
-DOSA
-
-Deployable Operating System Aplications
