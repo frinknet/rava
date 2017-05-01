@@ -66,7 +66,7 @@ CL:=$(MAKE) clean -C
 EACH=utils/each.sh
 RAVA=cd lua && ../utils/rava.sh
 
-all: rava rava.so
+all: rava.so rava
 
 rava.so: deps
 	@$(EACH) CP src/rava.so

@@ -15,7 +15,7 @@ for x in "$@"; do
 	 if [[ $x == *"*"* ]]; then
 			ARGS+=( $(cd $LUADIR && ls $x) )
 	 else
-			ARGS+=( $x )
+			ARGS+=( "${x}" )
 	 fi
 done
 

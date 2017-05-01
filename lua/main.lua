@@ -215,8 +215,6 @@ gen.compile = function(name, ...)
 	--load Lua Code
 	gen.addFile(...)
 
-	msg.info("Loading 'gen.ravastore'")
-
 	local files = require("gen.ravastore")
 
 	msg.info("Generating "..name..".a")
@@ -249,6 +247,8 @@ gen.compile = function(name, ...)
 
 	-- run PostHooks
 	callHooks(postHooks, name)
+
+	msg.indent("\nFinished compiling: "..name.."\nNow, test and see if it works!")
 end
 
 -- Generate an object file from lua files

@@ -14,7 +14,7 @@ msg.line = function(str)
 end
 
 msg.indent = function(str)
-	msg.line("\t"..(str or ""))
+	msg.line("\t"..tostring(str or ""):gsub("\n", "\n\t"))
 end
 
 msg.format = function(str, ...)
