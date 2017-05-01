@@ -8,6 +8,8 @@ DIR_LIBS=libs
 DIR_LIBS_LUA=$(DIR_LIBS)/luajit
 DIR_LIBS_LUV=$(DIR_LIBS)/libuv
 
+DIR_TEST=examples
+
 DIR_LUA=lua
 
 LUA_DEPS=\
@@ -90,8 +92,8 @@ rava: deps
 
 test: rava
 	@$(EACH) RAVA hello
-	@./rava --binary=hello \
-		example/hello.lua
+	@./rava --binary=test-hello \
+		$(DIR_TEST)/hello.lua
 
 install: $(INSTALL_DEP)
 	@$(EACH) INSTALL $(INSTALL_BIN)/rava
@@ -193,5 +195,5 @@ clean-rava:
 	@$(CL) src/
 
 clean-test:
-	@$(EACH) RM hello* examples/*.o examples/*.a
-	@$(RM) hello* examples/*.o examples/*.a
+	@$(EACH) RM test* $(DIR_TEST)/*.o $(DIR_TEST)/*.a
+	@$(RM) test* $(DIR_TEST)/*.o $(DIR_TEST)/*.a
