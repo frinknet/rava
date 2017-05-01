@@ -6,7 +6,7 @@ LIBDIR="$RAVDIR/libs"
 LUADIR="$RAVDIR/lua"
 LUAJIT="$LIBDIR/luajit/luajit"
 
-export LUA_PATH="./?.lua;$LUADIR/?.lua;$RAVDIR/?.lua;$RAVDIR/?.so"
+export LUA_PATH="./?.lua;./?.so;$LUADIR/?.lua;$RAVDIR/?.lua;$RAVDIR/?.so"
 export RAVABIN=$RAVDIR/utils/$(basename $0)
 
 ARGS=()
@@ -19,4 +19,4 @@ for x in "$@"; do
 	 fi
 done
 
-cd $LUADIR && $LUAJIT main.lua "${ARGS[@]}"
+$LUAJIT $LUADIR/main.lua "${ARGS[@]}"

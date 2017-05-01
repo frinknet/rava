@@ -66,12 +66,12 @@ MK:=$(MAKE) -C
 CL:=$(MAKE) clean -C
 
 EACH=utils/each.sh
-RAVA=utils/rava.sh
+RAVA=cd lua && ../utils/rava.sh -q
 
 all: rava rava.so
 
 rava.so: deps
-	@$(EACH) CP $@
+	@$(EACH) CP src/rava.so
 	@$(EACH) TO rava.so
 	@$(CP) src/rava.so .
 
@@ -87,6 +87,10 @@ rava: deps
 		config.lua \
 		gen/bcsave.lua \
 		opts/*.lua
+
+test: rava
+	@$(EACH) RAVA hello
+	@./rava --binary=hello example/hello.lua
 
 install: $(INSTALL_DEP)
 	@$(EACH) INSTALL $(INSTALL_BIN)/rava
