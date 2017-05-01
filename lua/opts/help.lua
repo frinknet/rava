@@ -2,7 +2,7 @@
 opt.add("h", "Show this help dialog", function(r)
 	msg.header()
 	msg.line("\tUsage:\n")
-	msg.line("\t"..RAVABIN:gsub("^.*/", "").." [opt] files objects\n")
+	msg.line("\t"..RAVABIN:gsub("^.*/", "").." [options] [files] [objects]\n")
 	msg.line("\tOptions:\n")
 	opt.show()
 	msg.line()

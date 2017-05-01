@@ -1,5 +1,5 @@
 -- Generate bytecode object
-opt.add("bytecode", "Generate a lua file to bytecode object", function(name, file, fileout, ...)
+opt.add("bytecode=name", "Generate a lua file to bytecode object", function(name, file, fileout, ...)
 	if file == nil then
 		msg.header()
 		msg.indent("Usage: "..RAVABIN:gsub("^.*/", "").." --bytecode [options]\n")

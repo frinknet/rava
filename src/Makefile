@@ -32,27 +32,36 @@ RAVA_INC=\
 
 CCARGS=-I../libs/luajit/ -I../libs/libuv/ -pthread -ldl -lm
 
-CC := gcc
-LD := ld
+CC:=gcc
+LD:=ld
+CP:=cp
+RM:=rm -rf
+MD:=mkdir -p
+MK:=$(MAKE) -C
+CL:=$(MAKE) clean -C
+
+EACH=../utils/each.sh
 
 all: $(RAVA_GEN) qmain.o
 
 ravamain.a: main.o librava.a
-	@echo LD $+ -o $@
+	@$(EACH) LD $+
+	@$(EACH) TO $@
 	@$(LD) -r -static $+ -o $@
 
 rava.so: librava.a
-	@echo CC $+ -o $@
+	@$(EACH) CC $@
 	@$(CC) -shared $(CCARGS) $+ -o $@
 
 librava.a: $(RAVA_OBJ) $(RAVA_INC)
-	@echo LD $+ -o $@
+	@$(EACH) LD $+
+	@$(EACH) TO $@
 	@$(LD) -r -static $+ -o $@
 
 .c.o:
-	@echo CC $< -o $@
+	@$(EACH) CC $@
 	@$(CC) -fPIC -c $(CCARGS) $<
 
 clean:
-	@echo RM main.o $(RAVA_OBJ) $(RAVA_GEN)
+	@$(EACH) RM main.o $(RAVA_OBJ) $(RAVA_GEN)
 	@rm -f main.o $(RAVA_OBJ) $(RAVA_GEN)

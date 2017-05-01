@@ -51,7 +51,6 @@ RAVA_OBJS=\
 	lua/rava.a \
 	libs/ravastore.o
 
-RAVA=cd lua && ./rava.sh
 
 DPREFIX=$(DESTDIR)$(PREFIX)
 INSTALL_BIN=$(DPREFIX)/bin
@@ -59,57 +58,91 @@ INSTALL_DEP=rava
 
 CCARGS=-Ilibs/luajit/ -Ilibs/libuv/ -lpthread
 
-CC=gcc
-LD=ld
+CC:=gcc
+LD:=ld
+CP:=cp
+RM:=rm -rf
+MD:=mkdir -p
+MK:=$(MAKE) -C
+CL:=$(MAKE) clean -C
+
+EACH=utils/each.sh
+RAVA=utils/rava.sh
 
 all: rava rava.so
 
 rava.so: deps
-	@echo CP $@
-	@cp src/rava.so .
+	@$(EACH) CP $@
+	@$(CP) src/rava.so .
 
 rava: deps
-	@echo RV --binary=rava
+	@$(EACH) RV rava
 	@$(RAVA) -q -csn --binary=../rava \
 		main.lua \
 		config.lua \
 		gen/bcsave.lua \
 		modules/*.lua
-	@rm rava.a
+	@$(RM) rava.a
 
 install: $(INSTALL_DEP)
-	@echo IN $(INSTALL_BIN)/rava
-	@sudo cp $(INSTALL_DEP) $(INSTALL_BIN)
+	@$(EACH) IN $(INSTALL_BIN)/rava
+	@sudo $(CP) $(INSTALL_DEP) $(INSTALL_BIN)
 
 uninstall:
-	@echo RM $(INSTALL_BIN)/rava
-	@rm -f $(INSTALL_BIN)/rava
+	@$(EACH) RM $(INSTALL_BIN)/rava
+	@$(RM) $(INSTALL_BIN)/rava
 
-clean: clean-rava
-	@echo CL rava
-	@rm -rf libs/ rava*
+$(RAVA_DEPS): $(LUA_LIBS) $(LUV_LIBS)
+	@$(EACH) MK src/
+	@$(MK) src/
 
-clean-all: clean clean-luajit clean-libuv clean-rava
+$(RAVA_LIBS): $(RAVA_DEPS)
+	@$(EACH) CP $@
+	@$(CP) $+ libs/
 
-clean-luajit:
-	@echo CL deps/luajit/
-	@$(MAKE) clean -C deps/luajit/
-	@cd deps/luajit/ && git clean -dfx
+$(RAVA_OBJS): $(RAVA_LIBS)
+	@$(EACH) RV lua/init.lua.o
+	@$(RAVA) -q --bytecode=init init.lua init.lua.o
+	@$(EACH) RV lua/rava.a
+	@$(RAVA) -q --library=rava \
+		init.lua.o \
+		opt.lua \
+		msg.lua \
+		../libs/ravamain.a
+	@$(EACH) RV libs/ravastore.o
+	@$(RAVA) -q --filestore=ravastore ../libs/ravastore.o rava.a
 
-clean-libuv:
-	@echo CL deps/libuv/
-	@$(MAKE) clean -C deps/libuv/
-	@cd deps/libuv/ && git clean -dfx
+$(LUA_LIBS): $(LUA_DEPS)
+	@$(EACH) MD libs/luajit/
+	@$(MD) libs/luajit/
+	@$(EACH) CP $(LUA_DEPS)
+	@$(EACH) TO libs/luajit/
+	@$(CP) $(LUA_DEPS) libs/luajit/
+	@$(EACH) ED libs/luajit/bcsave.lua
+	@sed -i'.bak' -e's/^Save.\+//' -e's/^  /\t/g' -e's/^File /\t/' -e's/\.$$//' \
+		libs/luajit/bcsave.lua
 
-clean-rava:
-	@echo RM deps/librava/
-	@rm -f libs/ravastore.* lua/rava.a lua/*.o lua/modules/*.o
-	@$(MAKE) clean -C src
+$(LUA_DEPS):
+	@$(EACH) MK $(DIR_DEPS_LUA)
+	@$(MK) $(DIR_DEPS_LUA) CFLAGS="-fPIC"
+
+$(LUV_LIBS): $(LUV_DEPS)
+	@$(EACH) MD libs/libuv/
+	@$(MD) libs/libuv/
+	@$(EACH) CP $(LUV_DEPS)
+	@$(EACH) TO libs/libuv/
+	@$(CP) $(LUV_DEPS) libs/libuv/
+
+$(LUV_DEPS):
+	@cd $(DIR_DEPS_LUV) && ./autogen.sh
+	@cd $(DIR_DEPS_LUV) && ./configure
+	@$(EACH) MK $(DIR_DEPS_LUV)
+	@$(MK) $(DIR_DEPS_LUV) CFLAGS="-fPIC"
 
 deps: deps-git deps-luajit deps-libuv deps-src deps-rava
 
 deps-git:
-	@echo MK git dependencies
+	@$(EACH) MK git-deps
 	@git submodule update --init
 
 deps-rava: deps-src $(RAVA_LIBS) $(RAVA_OBJS)
@@ -117,50 +150,24 @@ deps-src: deps-libuv deps-luajit $(RAVA_DEPS)
 deps-luajit: $(LUA_LIBS)
 deps-libuv: $(LUV_LIBS)
 
-$(RAVA_DEPS): $(LUA_LIBS) $(LUV_LIBS)
-	@echo "==== Building Librava ===="
-	@echo MK $@
-	@$(MAKE) -C src/
+clean: clean-rava
+	@$(EACH) RM libs/ rava*
+	@$(RM) libs/ rava*
 
-$(RAVA_LIBS): $(RAVA_DEPS)
-	@echo "==== Cataloging Librava ===="
-	@echo MK $@
-	@cp $+ libs/
+clean-all: clean clean-luajit clean-libuv clean-rava
 
-$(RAVA_OBJS): $(RAVA_LIBS)
-	@echo "==== Building Lua Rava ===="
-	@echo MK libs/ravamain.a
-	@$(RAVA) -q --bytecode=init init.lua init.lua.o
-	@$(RAVA) -q --library=rava \
-		init.lua.o \
-		opt.lua \
-		msg.lua \
-		../libs/ravamain.a
-	@echo MK libs/ravastore.o
-	@$(RAVA) -q --filestore=ravastore ../libs/ravastore.o rava.a
+clean-luajit:
+	@$(EACH) CL deps/luajit/
+	@$(CL) deps/luajit/
+	@cd deps/luajit/ && git clean -dfx
 
-$(LUA_LIBS): $(LUA_DEPS)
-	@echo "==== Cataloging Luajit ===="
-	@echo MK libs/luajit/
-	@mkdir -p libs/luajit/
-	@echo CP $(LUA_DEPS) libs/luajit/
-	@cp $(LUA_DEPS) libs/luajit/
-	@sed -i'.bak' -e's/^Save.\+//' -e's/^  /\t/g' -e's/^File /\t/' -e's/\.$$//' \
-		libs/luajit/bcsave.lua
+clean-libuv:
+	@$(EACH) CL deps/libuv/
+	@$(CL) deps/libuv/
+	@cd deps/libuv/ && git clean -dfx
 
-$(LUA_DEPS):
-	@echo "==== Building Luajit ===="
-	@$(MAKE) CFLAGS="-fPIC" -C $(DIR_DEPS_LUA)
-
-$(LUV_LIBS): $(LUV_DEPS)
-	@echo "==== Cataloging Libuv ===="
-	@echo MK libs/libuv/
-	@mkdir -p libs/libuv/
-	@echo CP $(LUV_DEPS) libs/libuv/
-	@cp $(LUV_DEPS) libs/libuv/
-
-$(LUV_DEPS):
-	@echo "==== Building Libuv ===="
-	@cd $(DIR_DEPS_LUV) && ./autogen.sh
-	@cd $(DIR_DEPS_LUV) && ./configure
-	@$(MAKE) CFLAGS="-fPIC" -C $(DIR_DEPS_LUV)
+clean-rava:
+	@$(EACH) RM libs/ravastore.* lua/rava.a lua/*.o lua/modules/*.o
+	@$(RM) libs/ravastore.* lua/rava.a lua/*.o lua/modules/*.o
+	@$(EACH)  CL src/
+	@$(CL) src/
