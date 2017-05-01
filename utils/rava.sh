@@ -7,4 +7,4 @@ LUAJIT="$LIBDIR/luajit/luajit"
 export LUA_PATH="./?.lua;$LUADIR/?.lua;$RAVDIR/?.lua;$RAVDIR/?.so"
 export RAVABIN=$RAVDIR/utils/$(basename $0)
 
-cd $LUADIR && $LUAJIT main.lua $@
+cd $LUADIR && $LUAJIT main.lua "$@"

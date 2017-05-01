@@ -60,7 +60,7 @@ msg.list = function(...)
 		local name = name or ""
 		local val = "["..tp.."]"
 
-		if tp == "string" or tp == "number" then
+		if tp == "string" or tp == "number" or tp == "boolean" then
 			val = obj
 		end
 
