@@ -1,5 +1,5 @@
 return {
-	APPNAME = "Rava Micro-Service Compiler",
+	APPNAME = "Rava: Lua Binary Micro-Service Compiler",
 	VERSION = "2.3.14",
 	COPYYEAR = "2015-2017",
 	COPYNAME = "FrinkNET and Lemurs",
