@@ -48,7 +48,7 @@ CL:=$(MAKE) clean -C
 EACH=../utils/each.sh
 RAVA=../utils/rava.sh
 
-all: $(RAVA_GEN) qmain.o
+all: $(RAVA_GEN)
 
 ravamain.a: main.o librava.a
 	@$(EACH) LD $+

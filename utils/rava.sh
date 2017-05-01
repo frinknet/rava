@@ -1,3 +1,5 @@
+#!/bin/bash
+
 UTLDIR="$(dirname $0)"
 RAVDIR="$(cd $UTLDIR/..; pwd)"
 LIBDIR="$RAVDIR/libs"
@@ -7,4 +9,14 @@ LUAJIT="$LIBDIR/luajit/luajit"
 export LUA_PATH="./?.lua;$LUADIR/?.lua;$RAVDIR/?.lua;$RAVDIR/?.so"
 export RAVABIN=$RAVDIR/utils/$(basename $0)
 
-cd $LUADIR && $LUAJIT main.lua "$@"
+ARGS=()
+
+for x in "$@"; do
+	 if [[ $x == *"*"* ]]; then
+			ARGS+=( $(cd $LUADIR && ls $x) )
+	 else
+			ARGS+=( $x )
+	 fi
+done
+
+cd $LUADIR && $LUAJIT main.lua "${ARGS[@]}"

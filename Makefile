@@ -80,13 +80,13 @@ rava: deps
 		main.lua \
 		config.lua \
 		gen/bcsave.lua \
-		modules/*.lua
+		opts/*.lua
 	@$(EACH) BINARY rava
 	@$(RAVA)  --binary=../rava \
 		main.lua \
 		config.lua \
 		gen/bcsave.lua \
-		modules/*.lua
+		opts/*.lua
 
 install: $(INSTALL_DEP)
 	@$(EACH) INSTALL $(INSTALL_BIN)/rava
@@ -182,7 +182,7 @@ clean-libuv:
 	@cd deps/libuv/ && git clean -dfx
 
 clean-rava:
-	@$(EACH) RM libs/ravastore.* lua/rava.a lua/*.o lua/modules/*.o
-	@$(RM) libs/ravastore.* lua/rava.a lua/*.o lua/modules/*.o
+	@$(EACH) RM libs/ravastore.* lua/rava.a lua/*.o lua/opts/*.o
+	@$(RM) libs/ravastore.* lua/rava.a lua/*.o lua/opts/*.o
 	@$(EACH) CL src/
 	@$(CL) src/
