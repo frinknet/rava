@@ -24,13 +24,18 @@ lua_State* rava_newlua() {
 		printf("Error: LuaJIT unavailable!!\n");
 	}
 
+	// stop collector during initialization
+	lua_gc(L, LUA_GCSTOP, 0);
+	// open libraries
 	luaL_openlibs(L);
+	// restart collector
+	lua_gc(L, LUA_GCRESTART, -1);
 
 	lua_getglobal(L, "package");
 	lua_getfield(L, -1, "preload");
 	lua_remove(L, -2); // Remove package
 	
-	// Store rava module definition at preload.rava
+	// Store rava module definition at packages.preload.rava
 	lua_pushcfunction(L, luaopen_rava);
 	lua_setfield(L, -2, "rava");
 
@@ -38,13 +43,13 @@ lua_State* rava_newlua() {
 	lua_setfield(L, -2, "rava.fs");
 
 	lua_pushcfunction(L, luaopen_rava_process);
-	lua_setfield(L, -2, "rava.proc");
+	lua_setfield(L, -2, "rava.process");
 
 	lua_pushcfunction(L, luaopen_rava_socket);
-	lua_setfield(L, -2, "rava.sock");
+	lua_setfield(L, -2, "rava.socket");
 
 	lua_pushcfunction(L, luaopen_rava_system);
-	lua_setfield(L, -2, "rava.sys");
+	lua_setfield(L, -2, "rava.system");
 
 	return L;
 }
@@ -80,10 +85,11 @@ int main(int argc, char *argv[])
 	}
 
 	if (r != 0) {
-		printf("%s\n", lua_tolstring(L, -1, 0));
-
-		return r;
+		fprintf(stderr, "%s\n", lua_tolstring(L, -1, 0));
+		fflush(stderr);
 	}
 
-	return 0;
+	lua_close(L);
+
+	return r? EXIT_FAILURE : EXIT_SUCCESS;
 }

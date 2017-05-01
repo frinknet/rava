@@ -45,13 +45,13 @@ LUA_API int luaopen_rava(lua_State *L)
 	lua_setfield(L, -2, "fs");
 
 	luaopen_rava_socket(L);
-	lua_setfield(L, -2, "sock");
+	lua_setfield(L, -2, "socket");
 
 	luaopen_rava_system(L);
-	lua_setfield(L, -2, "sys");
+	lua_setfield(L, -2, "system");
 
 	luaopen_rava_process(L);
-	lua_setfield(L, -2, "proc");
+	lua_setfield(L, -2, "process");
 
 	return 1;
 }
