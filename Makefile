@@ -92,8 +92,9 @@ rava: deps
 
 test: rava
 	@$(EACH) RAVA hello
-	@./rava --binary=test-hello \
-		$(DIR_TEST)/hello.lua
+	@./rava --binary=test-hello $(DIR_TEST)/hello.lua
+	@$(EACH) RAVA inc
+	@./rava -r --binary=test-inc examples/main.lua
 
 install: $(INSTALL_DEP)
 	@$(EACH) INSTALL $(INSTALL_BIN)/rava
