@@ -82,7 +82,7 @@ rava: deps
 		gen/bcsave.lua \
 		opts/*.lua
 	@$(EACH) BINARY rava
-	@$(RAVA)  --binary=../rava \
+	@$(RAVA) -sc --binary=../rava \
 		main.lua \
 		config.lua \
 		gen/bcsave.lua \
