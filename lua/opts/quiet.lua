@@ -5,6 +5,8 @@ opt.add("q", "Quiet except for errors", function()
 	function msg.done(...) end
 	function msg.fail(...) end
 	function msg.line(...) end
+	function msg.list(...) end
+	function msg.format(...) end
 	function print(...) end
 end)
 

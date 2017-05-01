@@ -60,7 +60,9 @@ local function generateCodeObject(file)
 	callHooks(preHooks, file)
 
 	-- generate lua object
-	if file:match("%.lua$") then
+	if not file:match("%.lua$") then
+		msg.info("Adding object "..file)
+	else
 		if (not opt.flag("n")) then
 			-- load code to check it for errors
 			local fn, err = loadstring(gen.code[file])
@@ -78,26 +80,21 @@ local function generateCodeObject(file)
 
 		objfile = file..".o"
 
-		msg.info("'"..name.."' = "..file)
+		msg.info("Generating '"..name.."' = "..file)
+
+		local ravacall = string.format("%s -q %s --bytecode=%s %s %s", RAVABIN, leavesym, name, "-", objfile)
 
 		-- create CC line
-		local f = io.popen(string.format(
-			"%s -q %s --bytecode=%s %s %s",
-			RAVABIN,
-			leavesym,
-			name,
-			"-",
-			objfile),"w")
+		local filepipe = io.popen(ravacall, "w")
+
+		-- TODO: check that the pipe opened properly
 
 		-- write code to generator
-		f:write(gen.code[file])
-		f:close()
-
-		msg.done()
-	else
-		msg.info("Adding object "..file)
-		msg.done()
+		filepipe:write(gen.code[file])
+		filepipe:close()
 	end
+
+	msg.done()
 
 	-- add object
 	if name == "main" then
@@ -106,20 +103,11 @@ local function generateCodeObject(file)
 		table.insert(objs, objfile)
 	end
 
-	--reclame memory (probably overkill in most cases)
+	--reclame memory
+	--(probably overkill in most cases)
 	gen.code[file] = true
 
 	return objfile
-end
-
--- list files in a directory
-gen.scandir = function(dir)
-	local r = {}
-	for file in io.popen("ls -a '"..dir.."' 2>/dev/null"):lines() do
-		table.insert(r, file)
-	end
-
-	return r
 end
 
 -- Add PreHooks to filter input
