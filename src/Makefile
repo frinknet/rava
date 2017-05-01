@@ -30,15 +30,20 @@ RAVA_INC=\
 	../libs/luajit/libluajit.a \
 	../libs/libuv/libuv.a
 
-CCARGS=-I../libs/luajit/ -I../libs/libuv/ -pthread -ldl -lm
+CCARGS=\
+	-I../libs/luajit/ \
+	-I../libs/libuv/ \
+	-pthread \
+	-ldl \
+	-lm
 
 CC:=gcc
-LINK:=ld
-COPY:=cp
-REMOVE:=rm -rf
-MKDIR:=mkdir -p
-MAKING:=$(MAKE) -C
-CLEAN:=$(MAKE) clean -C
+LD:=ld
+CP:=cp
+RM:=rm -rf
+MD:=mkdir -p
+MK:=$(MAKE) -C
+CL:=$(MAKE) clean -C
 
 EACH=../utils/each.sh
 RAVA=../utils/rava.sh
@@ -46,23 +51,23 @@ RAVA=../utils/rava.sh
 all: $(RAVA_GEN) qmain.o
 
 ravamain.a: main.o librava.a
-	@$(EACH) LINK $+
+	@$(EACH) LD $+
 	@$(EACH) INTO $@
-	@$(LINK) -r -static $+ -o $@
+	@$(LD) -r -static $+ -o $@
 
 rava.so: librava.a
 	@$(EACH) CC $@
 	@$(CC) -shared $(CCARGS) $+ -o $@
 
 librava.a: $(RAVA_OBJ) $(RAVA_INC)
-	@$(EACH) LINK $+
+	@$(EACH) LD $+
 	@$(EACH) INTO $@
-	@$(LINK) -r -static $+ -o $@
+	@$(LD) -r -static $+ -o $@
 
 .c.o:
 	@$(EACH) CC $@
 	@$(CC) -fPIC -c $(CCARGS) $<
 
 clean:
-	@$(EACH) REMOVE main.o $(RAVA_OBJ) $(RAVA_GEN)
-	@$(REMOVE) main.o $(RAVA_OBJ) $(RAVA_GEN)
+	@$(EACH) RM main.o $(RAVA_OBJ) $(RAVA_GEN)
+	@$(RM) main.o $(RAVA_OBJ) $(RAVA_GEN)
