@@ -67,6 +67,7 @@ lua_State* rava_newlua() {
 int main(int argc, char *argv[])
 {
 	int i;
+	int r;
 
 	lua_State* L = rava_newlua();
 
@@ -80,10 +81,10 @@ int main(int argc, char *argv[])
 
 	lua_setglobal(L, "arg");
 
-	int r = luaL_dostring(L, "require \"init\"");
+	r = luaL_dostring(L, "require \"init\"");
 
 	if (r == 0) {
-		int r = luaL_dostring(L, "require \"main\"");
+		r = luaL_dostring(L, "require \"main\"");
 	}
 
 	if (r != 0) {
