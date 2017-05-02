@@ -322,7 +322,8 @@ static int rava_fs_chown(lua_State* L)
 static int rava_fs_cwd(lua_State* L)
 {
   char dir[RAVA_MAX_PATH];
-  int r = uv_cwd(dir, (size_t*)RAVA_MAX_PATH);
+  size_t dirsize = sizeof dir;
+  int r = uv_cwd(dir, &dirsize);
 
   if (r < 0) {
     return luaL_error(L, uv_strerror(r));
@@ -359,7 +360,8 @@ static int rava_fs_exepath(lua_State* L)
 static int rava_fs_home(lua_State* L)
 {
   char dir[RAVA_MAX_PATH];
-  int r = uv_os_homedir(dir, (size_t*)RAVA_MAX_PATH);
+  size_t dirsize = sizeof dir;
+  int r = uv_os_homedir(dir, &dirsize);
 
   if (r < 0) {
     return luaL_error(L, uv_strerror(r));
